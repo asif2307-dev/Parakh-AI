@@ -124,7 +124,113 @@ const api = {
     });
     if (!res.ok) throw new Error('Failed to reset demo dataset');
     return await res.json();
+  },
+
+  // Supabase & Authentication
+  async getSupabaseConfig() {
+    const res = await fetch(`${API_BASE}/auth/supabase-config`);
+    if (!res.ok) throw new Error('Failed to load auth config');
+    return await res.json();
+  },
+
+  async sendOtp(destination, channel = 'email') {
+    const res = await fetch(`${API_BASE}/auth/otp/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ destination, channel })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to dispatch OTP');
+    }
+    return await res.json();
+  },
+
+  async verifyOtp(destination, otp_code, channel = 'email') {
+    const res = await fetch(`${API_BASE}/auth/otp/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ destination, otp_code, channel })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Invalid or expired OTP code');
+    }
+    return await res.json();
+  },
+
+  async completeOnboarding(onboardingData) {
+    const res = await fetch(`${API_BASE}/auth/onboarding`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(onboardingData)
+    });
+    if (!res.ok) throw new Error('Failed to save profile onboarding');
+    return await res.json();
+  },
+
+  // Face Verification (Replaces Aadhaar)
+  async verifyFace(data) {
+    const res = await fetch(`${API_BASE}/kyc/face-verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Face verification failed');
+    }
+    return await res.json();
+  },
+
+  // Organization Verification (CIN & MCA21)
+  async verifyOrganization(data) {
+    const res = await fetch(`${API_BASE}/kyc/org-verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Organization verification failed');
+    }
+    return await res.json();
+  },
+
+  // Expiry & Validity Monitor (USP 3)
+  async getBidExpiry(bidId, alertDays = 60) {
+    const res = await fetch(`${API_BASE}/bids/${bidId}/expiry?alert_days=${alertDays}`);
+    if (!res.ok) throw new Error(`Failed to load expiry records for bid ${bidId}`);
+    return await res.json();
+  },
+
+  // CrossCheck & Discrepancy Detection (USP 4)
+  async getBidCrossCheck(bidId) {
+    const res = await fetch(`${API_BASE}/bids/${bidId}/crosscheck`);
+    if (!res.ok) throw new Error(`Failed to load crosscheck findings for bid ${bidId}`);
+    return await res.json();
+  },
+
+  // SmartBid (USP 6)
+  async getBidSmartBid(bidId) {
+    const res = await fetch(`${API_BASE}/bids/${bidId}/smartbid`);
+    if (!res.ok) throw new Error(`Failed to load SmartBid evaluation for ${bidId}`);
+    return await res.json();
+  },
+
+  async compareSmartBid() {
+    const res = await fetch(`${API_BASE}/bids/smartbid/compare`);
+    if (!res.ok) throw new Error('Failed to load SmartBid multi-perspective comparison');
+    return await res.json();
+  },
+
+  // Notifications
+  async getNotifications() {
+    const res = await fetch(`${API_BASE}/notifications`);
+    if (!res.ok) throw new Error('Failed to load notifications');
+    return await res.json();
   }
 };
 
 window.api = api;
+

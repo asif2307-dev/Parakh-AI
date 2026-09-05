@@ -114,3 +114,83 @@ class DashboardStats(BaseModel):
     buyer_organizations: str
     gem_gmv_secured: str
     sample_batch_outcome: Dict[str, int]
+
+class OTPRequest(BaseModel):
+    destination: str # Email or Phone number (E.164)
+    channel: str = "email" # "email" or "sms"
+
+class OTPVerifyRequest(BaseModel):
+    destination: str
+    otp_code: str
+    channel: str = "email"
+
+class OnboardingRequest(BaseModel):
+    user_id: str
+    full_name: str
+    account_type: str = "INDIVIDUAL" # INDIVIDUAL or ORGANIZATION
+    role: str = "officer"
+    designation: str = "Procurement Evaluator"
+    department: Optional[str] = "GeM Technical Scrutiny Wing"
+    organization_name: Optional[str] = None
+    cin: Optional[str] = None
+
+class FaceVerifyRequest(BaseModel):
+    user_id: str
+    bid_id: Optional[str] = None
+    captured_frame_base64: Optional[str] = None # Transient capture for verification
+    challenge_response: str = "BLINK_CONFIRMED" # "BLINK_CONFIRMED", "HEAD_TURN_LEFT", "HEAD_TURN_RIGHT"
+    reference_user_id: Optional[str] = None
+
+class FaceVerifyResponse(BaseModel):
+    success: bool
+    verification_status: str # "VERIFIED", "LIVENESS_FAILED", "MATCH_FAILED", "MANUAL_REVIEW", "PROVIDER_NOT_CONFIGURED"
+    liveness_passed: bool
+    similarity_score: float
+    message: str
+    audit_signature: str
+    evaluated_at: str
+
+class OrgVerifyRequest(BaseModel):
+    cin: str
+    authorized_person: str
+    pan: Optional[str] = None
+
+class OrgVerifyResponse(BaseModel):
+    success: bool
+    verification_status: str # "VERIFIED", "MANUAL_REVIEW", "FAILED", "PROVIDER_NOT_CONFIGURED"
+    legal_name: str
+    cin: str
+    pan: str
+    gstin: str
+    company_status: str
+    incorporation_date: str
+    authorized_person_matched: bool
+    message: str
+    retrieval_timestamp: str
+
+class SmartBidWeightConfig(BaseModel):
+    compliance_weight: float = 0.25
+    experience_weight: float = 0.20
+    past_performance_weight: float = 0.15
+    quality_weight: float = 0.15
+    financial_weight: float = 0.10
+    price_weight: float = 0.15
+
+class SmartBidEvaluationResult(BaseModel):
+    bid_id: str
+    vendor_name: str
+    quoted_price: float
+    overall_smartbid_score: float
+    compliance_score: float
+    experience_score: float
+    performance_score: float
+    quality_score: float
+    financial_score: float
+    price_score: float
+    risk_deduction: float
+    debarment_status: str
+    value_for_money_rank: int
+    recommendation_summary: str
+    factor_breakdown: List[Dict[str, Any]]
+    perspective_ranks: Dict[str, int] # overall, vfm, experience, performance, compliance, risk
+

@@ -14,7 +14,9 @@ DEFAULT_DB_URL = "postgresql://postgres.uexwdxeggghmkzapxfwn:Butter%40Chicken12@
 SQLALCHEMY_DATABASE_URL = os.environ.get("DATABASE_URL", DEFAULT_DB_URL)
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL
+    SQLALCHEMY_DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=300,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

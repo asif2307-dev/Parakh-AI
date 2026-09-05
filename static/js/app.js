@@ -727,10 +727,14 @@
         } else {
           this.renderRecordsTable();
         }
-      } else if (viewName === 'alerts') {
+      } else if (viewName === 'alerts' || viewName === 'notifications') {
         this.renderAlerts();
       } else if (viewName === 'history') {
         this.renderAuditHistory();
+      } else if (viewName === 'expiry') {
+        this.renderExpiryView();
+      } else if (viewName === 'smartbid') {
+        this.renderSmartBidView();
       }
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -749,6 +753,7 @@
         'helpdesk': { parent: 'Support', current: 'Helpdesk & Grievances' },
         'upload': { parent: 'Procurement Data', current: 'Bid Documents' },
         'compliance': { parent: 'Intelligence', current: 'Compliance Scrutiny' },
+        'expiry': { parent: 'Intelligence', current: 'Expiry & Validity Monitor' },
         'crosscheck': { parent: 'Intelligence', current: 'Registry CrossCheck' },
         'risk': { parent: 'Intelligence', current: 'Risk Analysis' },
         'smartbid': { parent: 'Intelligence', current: 'SmartBid Compare' },
@@ -2285,6 +2290,248 @@
           </tr>
         `;
       }).join('');
+    }
+
+    // --- Expiry & Validity Surveillance Engine ---
+    renderExpiryView() {
+      this.currentExpiryFilter = this.currentExpiryFilter || 'ALL';
+      this.filterExpiryDocs(this.currentExpiryFilter);
+    }
+
+    filterExpiryDocs(status) {
+      this.currentExpiryFilter = status;
+      const allDocs = [
+        { bidder: 'Tech Solutions Pvt Ltd (Bidder A)', doc: 'ISO 9001:2015 Quality Management', issue: '2023-08-15', expiry: '2026-08-14', days: -22, status: 'EXPIRED' },
+        { bidder: 'Tech Solutions Pvt Ltd (Bidder A)', doc: 'Factory License (Form 4)', issue: '2024-10-01', expiry: '2026-09-20', days: 15, status: 'CRITICAL' },
+        { bidder: 'InfraTech Corp Ltd (Bidder B)', doc: 'PESO Explosives Storage License', issue: '2024-11-10', expiry: '2026-10-25', days: 50, status: 'EXPIRING_SOON' },
+        { bidder: 'InfraTech Corp Ltd (Bidder B)', doc: 'ISO 27001:2022 InfoSec Cert', issue: '2025-01-01', expiry: '2028-01-01', days: 483, status: 'VALID' },
+        { bidder: 'Global Power Systems (Bidder C)', doc: 'Class-1 Electrical Contractor License', issue: '2024-05-15', expiry: '2027-05-14', days: 251, status: 'VALID' },
+        { bidder: 'Global Power Systems (Bidder C)', doc: 'Pollution Control Board Consent (CTO)', issue: '2024-04-10', expiry: '2026-10-10', days: 35, status: 'EXPIRING_SOON' },
+        { bidder: 'Shree Balaji Transporters (Bidder D)', doc: 'National Highway Fleet Permit', issue: '2025-02-01', expiry: '2027-02-01', days: 514, status: 'VALID' },
+        { bidder: 'Shree Balaji Transporters (Bidder D)', doc: 'Hazardous Chemical Carriage Cert', issue: '2025-03-10', expiry: '2027-03-10', days: 551, status: 'VALID' }
+      ];
+
+      const filtered = status === 'ALL' ? allDocs : allDocs.filter(d => d.status === status);
+      const tbody = document.getElementById('expiryTableBody');
+      if (!tbody) return;
+
+      tbody.innerHTML = filtered.map(item => {
+        let badgeCls = 'badge-success';
+        if (item.status === 'EXPIRED' || item.status === 'CRITICAL') badgeCls = 'badge-error';
+        else if (item.status === 'EXPIRING_SOON') badgeCls = 'badge-warning';
+
+        return `
+          <tr>
+            <td><strong>${item.bidder}</strong></td>
+            <td>${item.doc}</td>
+            <td>${item.issue}</td>
+            <td>${item.expiry}</td>
+            <td><span class="badge ${badgeCls}">${item.days > 0 ? item.days + ' days' : item.days + ' days (Overdue)'}</span></td>
+            <td><span class="badge ${badgeCls}">${item.status}</span></td>
+            <td>
+              ${item.status === 'EXPIRED' 
+                ? `<button class="btn btn-secondary btn-sm" onclick="alert('Statutory Expiry Disqualification Notice logged in audit trail.')">Issue Notice</button>`
+                : item.status === 'CRITICAL'
+                ? `<button class="btn btn-secondary btn-sm" onclick="alert('Statutory Cure Citation dispatched to bidder.')">Demand Renewal</button>`
+                : `<span style="font-size:12px; color:#166534;">Verified Active</span>`
+              }
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // --- SmartBid Perspective & Explainable AI Suite ---
+    renderSmartBidView() {
+      this.currentSmartBidPerspective = this.currentSmartBidPerspective || 'overall';
+      this.setSmartBidPerspective(this.currentSmartBidPerspective);
+    }
+
+    onSmartBidTenderChange(tenderId) {
+      this.currentTenderId = tenderId;
+      this.setSmartBidPerspective(this.currentSmartBidPerspective || 'overall');
+    }
+
+    setSmartBidPerspective(perspective) {
+      this.currentSmartBidPerspective = perspective;
+
+      // Update active button state
+      document.querySelectorAll('.smartbid-persp-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`btn-persp-${perspective}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      // Perspective weights configurations
+      const perspectives = {
+        overall: {
+          weights: { price: '20%', compliance: '25%', experience: '15%', performance: '15%', financial: '10%', risk: '15%' },
+          scores: { a: '58.4 / 100', b: '92.4 / 100', c: '84.1 / 100' },
+          title: 'Bidder B (InfraTech Corp Ltd) — Superior Overall Value (Score: 92.4/100)',
+          reason: '<strong>Strategic Trade-off Analysis:</strong> While <strong>Bidder A (Tech Solutions)</strong> offered the lowest price (₹8.50 Cr vs ₹9.20 Cr), they exhibit critical non-compliances (insufficient audited turnover of ₹9.8 Cr vs ₹10 Cr req, expired ISO cert, and active CBI inquiry citation). In contrast, <strong>Bidder B</strong> offers 98% compliance, verified 12-project past performance, zero debarment history, and 5-year defect-free SLA record. <em>Lowest price does NOT constitute best value.</em>',
+          recBidder: 'b'
+        },
+        vfm: {
+          weights: { price: '25%', compliance: '20%', experience: '15%', performance: '15%', financial: '10%', risk: '15%' },
+          scores: { a: '61.2 / 100', b: '91.8 / 100', c: '82.0 / 100' },
+          title: 'Bidder B (InfraTech Corp Ltd) — Prime Value-for-Money Recommendation',
+          reason: '<strong>Value-For-Money Analysis:</strong> Bidder B provides the optimal balance of competitive pricing (only 8.2% above L1) with 98% compliance and proven execution capability. Bidder A has high lifecycle risk that exceeds the 8.2% cost differential.',
+          recBidder: 'b'
+        },
+        experience: {
+          weights: { price: '10%', compliance: '20%', experience: '35%', performance: '15%', financial: '10%', risk: '10%' },
+          scores: { a: '48.1 / 100', b: '95.6 / 100', c: '88.2 / 100' },
+          title: 'Bidder B (InfraTech Corp Ltd) — Dominant Technical Experience Leader (Score: 95.6/100)',
+          reason: '<strong>Experience Priority:</strong> Bidder B has delivered 12 high-pressure pipeline contracts (₹84 Cr aggregate value) with identical technical specifications. Bidder A only has 3 minor projects.',
+          recBidder: 'b'
+        },
+        performance: {
+          weights: { price: '10%', compliance: '20%', experience: '15%', performance: '35%', financial: '10%', risk: '10%' },
+          scores: { a: '49.8 / 100', b: '96.2 / 100', c: '89.4 / 100' },
+          title: 'Bidder B (InfraTech Corp Ltd) — Highest On-Field Reliability (Score: 96.2/100)',
+          reason: '<strong>Performance Priority:</strong> Zero defect citations and 100% on-time milestone delivery across last 5 years verified via GeM buyer feedback registry.',
+          recBidder: 'b'
+        },
+        compliance: {
+          weights: { price: '10%', compliance: '40%', experience: '10%', performance: '15%', financial: '10%', risk: '15%' },
+          scores: { a: '41.2 / 100', b: '96.8 / 100', c: '92.1 / 100' },
+          title: 'Bidder B (InfraTech Corp Ltd) — Full Statutory Compliance (Score: 96.8/100)',
+          reason: '<strong>Compliance Priority:</strong> 14 of 14 statutory requirements satisfied with cryptographically verified registry proofs. Bidder A disqualified due to statutory turnover shortfall.',
+          recBidder: 'b'
+        },
+        risk: {
+          weights: { price: '5%', compliance: '25%', experience: '5%', performance: '10%', financial: '15%', risk: '40%' },
+          scores: { a: '32.5 / 100', b: '94.0 / 100', c: '91.5 / 100' },
+          title: 'Bidder B (InfraTech Corp Ltd) — Cleanest Risk & Governance Profile (Score: 94.0/100)',
+          reason: '<strong>Risk & Governance Priority:</strong> Bidder A penalized heavily for active legal prosecution citation and expired statutory certifications. Bidder B verified clean across MCA21, CVC, and GeM registries.',
+          recBidder: 'b'
+        }
+      };
+
+      const p = perspectives[perspective] || perspectives.overall;
+
+      // Update table weights
+      if (document.getElementById('wt-price')) document.getElementById('wt-price').textContent = p.weights.price;
+      if (document.getElementById('wt-compliance')) document.getElementById('wt-compliance').textContent = p.weights.compliance;
+      if (document.getElementById('wt-experience')) document.getElementById('wt-experience').textContent = p.weights.experience;
+      if (document.getElementById('wt-performance')) document.getElementById('wt-performance').textContent = p.weights.performance;
+      if (document.getElementById('wt-financial')) document.getElementById('wt-financial').textContent = p.weights.financial;
+      if (document.getElementById('wt-risk')) document.getElementById('wt-risk').textContent = p.weights.risk;
+
+      // Update final scores
+      if (document.getElementById('score-bidder-a')) document.getElementById('score-bidder-a').textContent = p.scores.a;
+      if (document.getElementById('score-bidder-b')) document.getElementById('score-bidder-b').textContent = p.scores.b;
+      if (document.getElementById('score-bidder-c')) document.getElementById('score-bidder-c').textContent = p.scores.c;
+
+      // Update banner
+      if (document.getElementById('smartbidRecommendedBidderTitle')) document.getElementById('smartbidRecommendedBidderTitle').textContent = p.title;
+      if (document.getElementById('smartbidRecommendationReason')) document.getElementById('smartbidRecommendationReason').innerHTML = p.reason;
+    }
+
+    showExplainableAiModal(bidderKey) {
+      const modal = document.getElementById('explainableAiModal');
+      const title = document.getElementById('explainModalTitle');
+      const content = document.getElementById('explainModalContent');
+      if (!modal || !content) return;
+
+      const explanations = {
+        bidder_a: {
+          name: 'Bidder A (Tech Solutions Pvt Ltd)',
+          score: '58.4 / 100',
+          verdict: 'DISQUALIFIED / NOT RECOMMENDED',
+          verdictClass: 'badge-error',
+          factors: [
+            { dimension: 'Financial Price', raw: '100/100 (₹8.50 Cr)', weight: '20%', contrib: '+20.0', reason: 'Lowest submitted commercial quote (L1)', citation: 'Financial Bid Form B - Page 2' },
+            { dimension: 'Statutory Compliance', raw: '62/100', weight: '25%', contrib: '+15.5', reason: 'Audited turnover ₹9.8 Cr is below mandatory ₹10.0 Cr threshold', citation: 'CA Turnover Certificate 2025' },
+            { dimension: 'Technical Experience', raw: '50/100', weight: '15%', contrib: '+7.5', reason: 'Only 3 completed projects; none in cryogenic SCADA', citation: 'Technical Annexure 3 - Experience Schedule' },
+            { dimension: 'Past Performance', raw: '40/100', weight: '15%', contrib: '+6.0', reason: 'Two logged delivery SLA delay citations on GeM in 2025', citation: 'GeM Central Rating Registry' },
+            { dimension: 'Financial Stability', raw: '64/100', weight: '10%', contrib: '+6.4', reason: 'Working capital ratio is tight (1.1 vs 1.5 norm)', citation: 'MCA21 Balance Sheet 2024-25' },
+            { dimension: 'Risk & Debarment', raw: '20/100', weight: '15%', contrib: '+3.0', reason: 'Active CBI prosecution inquiry citation flagged in e-Courts', citation: 'CVC / CBI Vigilance Bulletins 2025' }
+          ]
+        },
+        bidder_b: {
+          name: 'Bidder B (InfraTech Corp Ltd)',
+          score: '92.4 / 100',
+          verdict: '★ RECOMMENDED FOR PROCUREMENT AWARD (VALUE FOR MONEY)',
+          verdictClass: 'badge-success',
+          factors: [
+            { dimension: 'Financial Price', raw: '92/100 (₹9.20 Cr)', weight: '20%', contrib: '+18.4', reason: 'Competitive commercial quote (+8.2% over L1)', citation: 'Financial Bid Form B - Page 2' },
+            { dimension: 'Statutory Compliance', raw: '98/100', weight: '25%', contrib: '+24.5', reason: '14 of 14 mandatory statutory requirements satisfied with valid docs', citation: 'Compliance Matrix - Tender #4929' },
+            { dimension: 'Technical Experience', raw: '96/100', weight: '15%', contrib: '+14.4', reason: '12 high-pressure pipeline contracts (₹84 Cr aggregate value)', citation: 'Client Completion Certificates (IOCL/GAIL)' },
+            { dimension: 'Past Performance', raw: '98/100', weight: '15%', contrib: '+14.7', reason: 'Zero defect citations and 100% on-time delivery across 5 years', citation: 'GeM Central Vendor Scorecard' },
+            { dimension: 'Financial Stability', raw: '94/100', weight: '10%', contrib: '+9.4', reason: '₹45.2 Cr turnover, audited net worth ₹18.5 Cr', citation: 'Audited Financials FY 2024-25' },
+            { dimension: 'Risk & Debarment', raw: '100/100', weight: '15%', contrib: '+15.0', reason: 'Zero debarment or blacklisting records across all checked registries', citation: 'MCA21 / CVC / GeM Blacklist Registry' }
+          ]
+        },
+        bidder_c: {
+          name: 'Bidder C (Global Systems Ltd)',
+          score: '84.1 / 100',
+          verdict: 'QUALIFIED / HIGH PRICE PREMIUM',
+          verdictClass: 'badge-info',
+          factors: [
+            { dimension: 'Financial Price', raw: '72/100 (₹11.80 Cr)', weight: '20%', contrib: '+14.4', reason: 'Commercial quote is 38.8% above L1, exceeds allocated budget estimate', citation: 'Financial Bid Form B - Page 2' },
+            { dimension: 'Statutory Compliance', raw: '94/100', weight: '25%', contrib: '+23.5', reason: 'All critical requirements passed; minor non-material documentation delay', citation: 'Compliance Scrutiny Sheet' },
+            { dimension: 'Technical Experience', raw: '90/100', weight: '15%', contrib: '+13.5', reason: '8 high-value projects completed in international jurisdictions', citation: 'Project Track Record Annexure' },
+            { dimension: 'Past Performance', raw: '92/100', weight: '15%', contrib: '+13.8', reason: 'Strong 98.2% SLA adherence track record', citation: 'GeM Vendor Performance Matrix' },
+            { dimension: 'Financial Stability', raw: '98/100', weight: '10%', contrib: '+9.8', reason: '₹120 Cr turnover, multinational balance sheet stability', citation: 'MCA21 Registry Records FY 2024-25' },
+            { dimension: 'Risk & Debarment', raw: '100/100', weight: '15%', contrib: '+15.0', reason: 'Zero adverse regulatory records found in authoritative sources', citation: 'CVC / MoPNG Governance Archive' }
+          ]
+        }
+      };
+
+      const exp = explanations[bidderKey] || explanations.bidder_b;
+      if (title) title.textContent = `Explainable AI Traceability — ${exp.name}`;
+
+      content.innerHTML = `
+        <div style="background:#F8FAFC; border:1px solid #E2E8F0; padding:14px; border-radius:4px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span style="font-size:11px; color:#64748B; font-weight:bold; text-transform:uppercase;">Composite AI Score</span>
+            <div style="font-size:22px; font-weight:800; color:var(--parakh-navy);">${exp.score}</div>
+          </div>
+          <div>
+            <span class="badge ${exp.verdictClass}" style="font-size:12px; padding:6px 12px;">${exp.verdict}</span>
+          </div>
+        </div>
+
+        <h4 style="color:var(--parakh-navy); margin-bottom:8px; font-size:14px;">Factor Breakdown & Evidence Grounding ("WHY?" Analysis)</h4>
+        <p style="font-size:12px; color:#475569; margin-bottom:12px;">
+          Every score component is derived from deterministic rules and verified documentation citations. No black-box or hallucinated metrics.
+        </p>
+
+        <table class="data-table" style="font-size:12px;">
+          <thead>
+            <tr>
+              <th>Dimension</th>
+              <th>Raw Metric</th>
+              <th>Weight</th>
+              <th>Contribution</th>
+              <th>Algorithmic Rationale</th>
+              <th>Document Citation / Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${exp.factors.map(f => `
+              <tr>
+                <td><strong>${f.dimension}</strong></td>
+                <td>${f.raw}</td>
+                <td><code>${f.weight}</code></td>
+                <td><strong style="color:var(--parakh-teal);">${f.contrib}</strong></td>
+                <td>${f.reason}</td>
+                <td style="font-family:monospace; font-size:11px; color:#0369A1;">${f.citation}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div style="margin-top:16px; padding:12px; background:#EFF6FF; border-radius:4px; border:1px solid #BFDBFE; font-size:12px; color:#1E40AF;">
+          <strong>Official Governance Note:</strong> This Explainable AI breakdown adheres to Government of India procurement transparency guidelines. Final award decision rests with the authorized Tender Committee.
+        </div>
+      `;
+
+      modal.style.display = 'flex';
+    }
+
+    closeExplainableAiModal() {
+      const modal = document.getElementById('explainableAiModal');
+      if (modal) modal.style.display = 'none';
     }
 
     // --- Administration Tabs ---
