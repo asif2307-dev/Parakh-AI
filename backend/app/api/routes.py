@@ -216,8 +216,9 @@ def analyze_bid(bid_id: str, db: Session = Depends(get_db)):
     eval_res = ComplianceEngine.evaluate_bid(target)
     contradictions = ContradictionDetector.detect_contradictions(ai_requirements)
 
-    b.is_analyzed = True
-    b.analyzed_at = now_str
+    target.update(eval_res)
+    target["contradictions"] = contradictions
+    target["contradictions_count"] = len(contradictions)
     b.compliance_score = eval_res["compliance_score"]
     b.risk_level = eval_res["risk_level"]
     b.passed_requirements = eval_res["passed_requirements"]
@@ -353,20 +354,28 @@ def submit_officer_decision(bid_id: str, req: OfficerDecisionRequest, db: Sessio
     b.extracted_data = data
     db.commit()
 
+    AuditService.record_entry(
+        bid_id=bid_id,
+        action_type="OFFICER_DECISION",
+        actor=f"{req.officer_name} ({req.officer_designation})",
+        details=f"Decision recorded: {req.decision} - {req.reason}",
+        status_tag="SUCCESS"
+    )
+
     return {
         "success": True,
         "message": f"Officer decision [{req.decision}] recorded. Bid status updated to '{new_status}'.",
-        "decision": decision_record
+        "decision": decision_record,
+        "bid": {
+            "id": b.id,
+            "status": b.status,
+            "decision": decision_record
+        }
     }
 
 @router.get("/audit-trail")
 def get_audit_trail(bid_id: Optional[str] = Query(None), db: Session = Depends(get_db)):
-    query = db.query(AuditLog)
-    if bid_id:
-        query = query.filter(AuditLog.bid_id == bid_id)
-    logs = query.order_by(AuditLog.id.desc()).all()
-    
-    results = [{"timestamp": l.timestamp, "action_type": l.action_type, "actor": l.actor, "details": l.details, "status_tag": l.status_tag} for l in logs]
+    results = AuditService.get_all_logs(bid_id)
     return {
         "total_logs": len(results),
         "logs": results
@@ -398,3 +407,21 @@ def test_connector(connector_id: str):
             "message": "Demo ping response received within 120ms."
         }
     return data
+
+@router.post("/demo/reset")
+def reset_demo_database(db: Session = Depends(get_db)):
+    mock_db.reset()
+    b = db.query(Bid).filter(Bid.id == "BID-2026-003").first()
+    if b:
+        b.status = "Under Analysis"
+        b.compliance_score = 0
+        b.risk_level = "Under Analysis"
+        b.passed_requirements = 0
+        b.failed_requirements = 0
+        b.review_requirements = 0
+        b.contradictions_count = 0
+        b.analyzed_at = None
+        b.is_analyzed = False
+        db.commit()
+    return {"success": True, "message": "Demo database reset to initial pristine state."}
+

@@ -65,22 +65,28 @@ async def portal_root():
 @app.get("/portal/{page}")
 async def portal_pages(page: str):
     allowed_pages = ["login", "register", "dashboard", "profile", "applications", "services", "documents", "notifications", "settings"]
+    if page == "bidder":
+        return serve_html("bidder/index.html")
     if page in allowed_pages:
         return serve_html(f"portal/{page}.html")
     return serve_html("portal/login.html")
+
+# Bidder Portal Routes
+@app.get("/bidder")
+async def bidder_root():
+    return serve_html("bidder/index.html")
+
+@app.get("/bidder/{page}")
+async def bidder_pages(page: str):
+    allowed_bidder_pages = ["index", "login", "submit", "status"]
+    if page in allowed_bidder_pages:
+        return serve_html(f"bidder/{page}.html")
+    return serve_html("bidder/index.html")
 
 # Public Routes
 @app.get("/public/index.html")
 async def public_index_redirect():
     return RedirectResponse(url="/")
-
-@app.get("/{page}")
-async def public_pages(page: str):
-    allowed_pages = ["about", "services", "programs", "resources", "updates", "faq", "contact"]
-    if page in allowed_pages:
-        return serve_html(f"public/{page}.html")
-    # Fallback to index if it's not a known route (basic protection)
-    return serve_html("public/index.html")
 
 @app.get("/health")
 def health():
@@ -91,3 +97,11 @@ def health():
         "sih_problem_statement": "SIH26100",
         "team": "BUTTER CHICKEN"
     }
+
+@app.get("/{page}")
+async def public_pages(page: str):
+    allowed_pages = ["about", "services", "programs", "resources", "updates", "faq", "contact", "bidder"]
+    if page in allowed_pages:
+        return serve_html(f"public/{page}.html")
+    # Fallback to index if it's not a known route (basic protection)
+    return serve_html("public/index.html")

@@ -27,7 +27,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 <a href="/programs" class="nav-link">Programs</a>
                 <a href="/resources" class="nav-link">Resources</a>
                 <a href="/contact" class="nav-link">Contact</a>
-                <a href="/portal" class="btn-portal">Access Portal</a>
+                <a href="/bidder" class="btn-portal" style="background-color: #009291; margin-right: 6px; text-decoration:none;">Bidder Portal</a>
+                <a href="/portal" class="btn-portal" style="background-color: #07264A; text-decoration:none;">Officer Portal</a>
             </nav>
         </header>
     `;

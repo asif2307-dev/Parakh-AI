@@ -1038,9 +1038,23 @@ button, input, select, textarea {
 .table-gov th.sortable {
   cursor: pointer;
   user-select: none;
+  position: relative;
+  padding-right: 20px;
+  transition: background-color 0.15s ease;
+}
+.table-gov th.sortable::after {
+  content: " ⇅";
+  font-size: 11px;
+  opacity: 0.5;
+  margin-left: 5px;
+  font-weight: normal;
 }
 .table-gov th.sortable:hover {
   background-color: var(--primary-navy-light);
+}
+.table-gov th.sortable:hover::after {
+  opacity: 1;
+  color: #38BDF8;
 }
 
 .table-gov td {

@@ -86,27 +86,35 @@ Once authenticated, you will land on the **Procurement Intelligence Dashboard**.
 
 1. **Install Python Dependencies:**
    ```bash
-   pip install -r backend/requirements.txt
+   pip install -r requirements.txt
    ```
 
-2. **Configure Environment Variables:**
-   Ensure your `.env` file (if applicable) contains the correct Supabase / PostgreSQL connection strings.
+2. **Configure Environment Variables (Optional):**
+   Copy `.env.example` to `.env` if custom Supabase or Gemini API configurations are needed.
 
 3. **Start the API Server:**
-   You can run the application using the provided batch script or manually via Uvicorn:
+   You can run the application using the provided batch script or manually via Python:
    ```bash
    # Using the batch script (Windows)
    run.bat
-   
-   # OR manually using Python
-   cd backend/app
+
+   # OR manually using Python at root
    python main.py
    ```
-   *The server will start on `http://localhost:8000`.*
+   *The server will start on `http://127.0.0.1:8000`.*
 
 4. **Access the Application:**
-   * Public Website: `http://localhost:8000/public/index.html`
-   * Officer Portal: `http://localhost:8000/portal/dashboard`
+   * **Public Landing Page:** `http://localhost:8000/`
+   * **Bidder & Vendor Self-Service Portal:** `http://localhost:8000/bidder`
+   * **Officer Login Portal:** `http://localhost:8000/portal`
+   * **Officer Scrutiny Dashboard:** `http://localhost:8000/portal/dashboard`
+   * **Interactive API Documentation:** `http://localhost:8000/docs`
+
+5. **Run Automated Verification Tests:**
+   ```bash
+   python test_golden_path.py
+   python test_full_workflow.py
+   ```
 
 ---
-*Developed for the Government e-Marketplace (GeM) Initiative.*
+*Developed for the Government e-Marketplace (GeM) Initiative | Smart India Hackathon 2026 | Problem Statement: SIH26100 | Team: BUTTER CHICKEN*

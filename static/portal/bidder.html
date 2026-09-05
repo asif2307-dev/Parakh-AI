@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PARAKH AI — Bidder & Vendor Compliance Self-Service Portal | Government e-Marketplace</title>
+  <meta name="description" content="Official Vendor & Bidder Self-Service Intake and Pre-Submission Scrutiny Portal for GeM Procurement.">
+  <link rel="icon" type="image/png" href="/static/images/parakh-logo.png">
+  <link rel="stylesheet" href="/static/common/components.css">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <style>
+    :root {
+      --primary-navy: #07264A;
+      --primary-navy-dark: #041830;
+      --secondary-teal: #009291;
+      --secondary-teal-hover: #007a79;
+      --secondary-teal-light: #E6F4F4;
+      --accent-gold: #D97706;
+      --bg-canvas: #F4F6F9;
+      --card-bg: #FFFFFF;
+      --border-color: #CBD5E1;
+      --text-main: #0F172A;
+      --text-muted: #475569;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Strip */
+    .bidder-top-strip {
+      background-color: #031526;
+      color: #E2E8F0;
+      padding: 6px 24px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .bidder-top-strip a {
+      color: #38BDF8;
+      text-decoration: none;
+      margin-left: 12px;
+    }
+    .bidder-top-strip a:hover {
+      text-decoration: underline;
+    }
+
+    /* Header */
+    .bidder-header {
+      background-color: #FFFFFF;
+      border-bottom: 2px solid var(--border-color);
+      padding: 12px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+    .bidder-brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      text-decoration: none;
+    }
+    .bidder-brand img {
+      height: 52px;
+      width: auto;
+      object-fit: contain;
+    }
+    .brand-text-block h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary-navy);
+      line-height: 1.2;
+      margin: 0;
+    }
+    .brand-text-block p {
+      font-size: 0.78rem;
+      color: var(--secondary-teal);
+      font-weight: 600;
+      margin: 0;
+      letter-spacing: 0.5px;
+    }
+
+    .bidder-profile-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background-color: #F8FAFC;
+      border: 1px solid var(--border-color);
+      padding: 8px 14px;
+      border-radius: 8px;
+    }
+    .bidder-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, var(--secondary-teal) 0%, var(--primary-navy) 100%);
+      color: #FFFFFF;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .bidder-info {
+      font-size: 12px;
+      line-height: 1.3;
+    }
+    .bidder-name {
+      font-weight: 700;
+      color: var(--primary-navy);
+    }
+    .bidder-gstin {
+      color: var(--text-muted);
+      font-family: monospace;
+      font-size: 11px;
+    }
+
+    /* Sub-nav tabs */
+    .bidder-nav {
+      background-color: #07264A;
+      padding: 0 28px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+    }
+    .nav-tab-btn {
+      background: transparent;
+      border: none;
+      color: #94A3B8;
+      padding: 12px 18px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .nav-tab-btn:hover {
+      color: #FFFFFF;
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    .nav-tab-btn.active {
+      color: #5EEAD4;
+      border-bottom-color: #009291;
+      background-color: rgba(0, 146, 145, 0.15);
+    }
+
+    /* Main Content Area */
+    .bidder-container {
+      max-width: 1240px;
+      margin: 24px auto;
+      padding: 0 20px;
+      flex: 1;
+      width: 100%;
+    }
+
+    .page-title-strip {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .page-title-strip h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--primary-navy);
+      margin: 0;
+    }
+    .page-title-strip p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin: 2px 0 0;
+    }
+
+    /* Cards */
+    .gov-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .gov-card-header {
+      background-color: #F8FAFC;
+      border-bottom: 1px solid var(--border-color);
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .gov-card-header h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary-navy);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .gov-card-body {
+      padding: 24px;
+    }
+
+    /* Form Layout */
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .form-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 18px;
+    }
+    @media (max-width: 768px) {
+      .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #1E293B;
+      margin-bottom: 6px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 13.5px;
+      background-color: #FFFFFF;
+      box-sizing: border-box;
+      color: var(--text-main);
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--secondary-teal);
+      box-shadow: 0 0 0 3px rgba(0, 146, 145, 0.15);
+    }
+
+    /* File upload box */
+    .file-upload-card {
+      border: 2px dashed #94A3B8;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      background-color: #F8FAFC;
+      transition: all 0.2s;
+      cursor: pointer;
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .file-upload-card:hover {
+      border-color: var(--secondary-teal);
+      background-color: var(--secondary-teal-light);
+    }
+    .file-upload-title {
+      font-weight: 700;
+      font-size: 13.5px;
+      color: var(--primary-navy);
+      margin-bottom: 4px;
+    }
+    .file-upload-desc {
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+    .file-upload-status {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #166534;
+      font-weight: 600;
+      display: none;
+    }
+
+    /* Action Buttons */
+    .btn-action-primary {
+      background: linear-gradient(180deg, #009291 0%, #007a79 100%);
+      color: #FFFFFF;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 6px rgba(0, 146, 145, 0.3);
+      transition: all 0.2s;
+    }
+    .btn-action-primary:hover {
+      background: linear-gradient(180deg, #007a79 0%, #006362 100%);
+      transform: translateY(-1px);
+    }
+    .btn-action-secondary {
+      background: #FFFFFF;
+      color: var(--primary-navy);
+      border: 1px solid var(--border-color);
+      padding: 11px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-action-secondary:hover {
+      background: #F1F5F9;
+      border-color: #94A3B8;
+    }
+
+    /* Live Analysis Panel */
+    .analysis-panel {
+      display: none;
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 24px;
+      margin-top: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .score-badge-huge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .score-pass {
+      background-color: #DCFCE7;
+      color: #166534;
+      border: 1px solid #BBF7D0;
+    }
+    .score-flag {
+      background-color: #FEF2F2;
+      color: #991B1B;
+      border: 1px solid #FECACA;
+    }
+
+    .check-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 1px solid #F1F5F9;
+      font-size: 13px;
+    }
+    .check-row:last-child {
+      border-bottom: none;
+    }
+
+    /* Certificate Modal */
+    .cert-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(7, 38, 74, 0.7);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .cert-paper {
+      background: #FFFFFF;
+      width: 100%;
+      max-width: 680px;
+      border-radius: 8px;
+      padding: 36px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+      border: 8px double #CBD5E1;
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Strip -->
+  <div class="bidder-top-strip">
+    <div>
+      <strong>भारत सरकार | GOVERNMENT OF INDIA</strong>
+      <span style="color:#94A3B8; margin-left:8px;">| वाणिज्य एवं उद्योग मंत्रालय | Government e-Marketplace (GeM)</span>
+    </div>
+    <div>
+      <span>Node: GeM-BIDDER-EXT02</span>
+      <a href="/portal">Officer Scrutiny Portal →</a>
+      <a href="/">Public Website</a>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="bidder-header">
+    <a href="/bidder" class="bidder-brand">
+      <img src="/static/images/parakh-logo.png" alt="PARAKH AI Logo">
+      <div class="brand-text-block">
+        <h1>PARAKH AI</h1>
+        <p>BIDDER & SUPPLIER COMPLIANCE PORTAL</p>
+      </div>
+    </a>
+
+    <div class="bidder-profile-card">
+      <div class="bidder-avatar">AT</div>
+      <div class="bidder-info">
+        <div class="bidder-name" id="bidderCompanyName">Apex Turbomachinery Systems Pvt Ltd</div>
+        <div class="bidder-gstin">GSTIN: 27AABCB1234F1Z8 | MSME Micro</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="bidder-nav">
+    <button type="button" class="nav-tab-btn active" onclick="switchBidderTab('intake')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="12" y1="18" x2="12" y2="12"/>
+        <line x1="9" y1="15" x2="15" y2="15"/>
+      </svg>
+      Submit & Pre-Check Bid Docs
+    </button>
+    <button type="button" class="nav-tab-btn" onclick="switchBidderTab('mybids')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+        <line x1="9" y1="9" x2="15" y2="9"/>
+        <line x1="9" y1="13" x2="15" y2="13"/>
+        <line x1="9" y1="17" x2="11" y2="17"/>
+      </svg>
+      My Submitted Bids (<span id="bidsCountBadge">3</span>)
+    </button>
+    <button type="button" class="nav-tab-btn" onclick="switchBidderTab('registry')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      Live Statutory Registry Check
+    </button>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="bidder-container">
+
+    <!-- =====================================================================
+         TAB 1: BID INTAKE & PRE-CHECK FORM
+         ===================================================================== -->
+    <div id="tabIntake">
+      <div class="page-title-strip">
+        <div>
+          <h2>Bidder Statutory Document Intake & AI Pre-Check</h2>
+          <p>Fill in tender parameters, upload mandatory compliance documents, and run real-time PARAKH AI validation prior to GeM formal submission.</p>
+        </div>
+        <div>
+          <button type="button" class="btn-action-secondary" onclick="autofillDemoBidder()">
+            ⚡ Pre-fill Sample Compliant Tender
+          </button>
+          <button type="button" class="btn-action-secondary" onclick="autofillDiscrepantBidder()" style="margin-left:6px; color:#B91C1C;">
+            ⚠️ Pre-fill Sample Discrepant Bid
+          </button>
+        </div>
+      </div>
+
+      <form id="bidderForm" onsubmit="handlePreCheck(event)">
+        
+        <!-- Step 1: Tender & Entity Details -->
+        <div class="gov-card">
+          <div class="gov-card-header">
+            <h3>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--secondary-teal)" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+              </svg>
+              Step 1: GeM Tender & Bidder Identification
+            </h3>
+            <span style="font-size:11.5px; color:#64748B;">Government e-Marketplace Official Integration</span>
+          </div>
+          <div class="gov-card-body">
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label" for="gemBidNo">GeM Bid / Tender Notice ID *</label>
+                <input type="text" id="gemBidNo" class="form-control" required value="GEM/2026/B/882194" placeholder="e.g. GEM/2026/B/882194">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="procuringPsu">Procuring PSU / Buyer Ministry *</label>
+                <select id="procuringPsu" class="form-control" required>
+                  <option value="ONGC">ONGC - Oil & Natural Gas Corporation Ltd</option>
+                  <option value="IOCL">IOCL - Indian Oil Corporation Ltd</option>
+                  <option value="GAIL" selected>GAIL (India) Ltd - National Gas Grid</option>
+                  <option value="HPCL">HPCL - Hindustan Petroleum Corporation Ltd</option>
+                  <option value="BPCL">BPCL - Bharat Petroleum Corporation Ltd</option>
+                  <option value="MoD">Ministry of Defence / Ordnance</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="tenderCategory">Procurement Category *</label>
+                <select id="tenderCategory" class="form-control" required>
+                  <option value="Goods">Goods & Equipment Supply</option>
+                  <option value="Works">Civil & Mechanical Works</option>
+                  <option value="Services">Consulting & IT Services</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label" for="tenderTitle">Tender Title *</label>
+                <input type="text" id="tenderTitle" class="form-control" required value="Annual Maintenance & High-Precision Calibration of Custody Transfer Flow Meters" placeholder="Enter tender title">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="contractValue">Estimated Bid Value (INR in Lakhs) *</label>
+                <input type="number" id="contractValue" class="form-control" required value="480.00" step="0.01">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Financial & Statutory Metric Claims -->
+        <div class="gov-card">
+          <div class="gov-card-header">
+            <h3>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--secondary-teal)" stroke-width="2">
+                <line x1="12" y1="1" x2="12" y2="23"/>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+              Step 2: Statutory Financial & MSME Exemption Declarations
+            </h3>
+            <span style="font-size:11.5px; color:#64748B;">Validated against MCA21, GSTN & Udyam Registries</span>
+          </div>
+          <div class="gov-card-body">
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label" for="declaredTurnover">Declared 3-Year Avg Annual Turnover (₹ Cr) *</label>
+                <input type="number" id="declaredTurnover" class="form-control" required value="16.50" step="0.01">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="msmeStatus">MSME / Startup Exemption Category *</label>
+                <select id="msmeStatus" class="form-control" required>
+                  <option value="Micro">Micro Enterprise (Udyam Verified)</option>
+                  <option value="Small" selected>Small Enterprise (Turnover waiver eligible)</option>
+                  <option value="Startup">DPIIT Recognized Startup (PQC waiver)</option>
+                  <option value="General">General Commercial Bidder (No Waiver)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="udyamNo">Udyam Registration Number</label>
+                <input type="text" id="udyamNo" class="form-control" value="UDYAM-MH-03-009121" placeholder="UDYAM-XX-00-000000">
+              </div>
+            </div>
+
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label" for="localContent">Local Content Percentage (Make In India) *</label>
+                <input type="number" id="localContent" class="form-control" required value="68" min="0" max="100">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="gstinDeclared">Registered GSTIN *</label>
+                <input type="text" id="gstinDeclared" class="form-control" required value="27AABCB1234F1Z8">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cinDeclared">Corporate Identification No (CIN) *</label>
+                <input type="text" id="cinDeclared" class="form-control" required value="U28112MH2014PTC254890">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Statutory Document Uploads -->
+        <div class="gov-card">
+          <div class="gov-card-header">
+            <h3>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--secondary-teal)" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Step 3: Mandatory Bid Document Uploads
+            </h3>
+            <span style="font-size:11.5px; color:#64748B;">Supported Formats: PDF, JPG (Max 25MB each)</span>
+          </div>
+          <div class="gov-card-body">
+            <div class="form-grid-3">
+              
+              <!-- Doc 1 -->
+              <div class="file-upload-card" onclick="simulateFileUpload('doc1')">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--secondary-teal)" stroke-width="2" style="margin-bottom:8px;">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <div class="file-upload-title">Audited Balance Sheets (3 Yrs)</div>
+                <div class="file-upload-desc">Signed by Chartered Accountant with UDIN</div>
+                <div class="file-upload-status" id="doc1Status">✓ Audited_Financials_2023_2025.pdf (3.8 MB)</div>
+              </div>
+
+              <!-- Doc 2 -->
+              <div class="file-upload-card" onclick="simulateFileUpload('doc2')">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--secondary-teal)" stroke-width="2" style="margin-bottom:8px;">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <div class="file-upload-title">GST 3B Filings & Returns</div>
+                <div class="file-upload-desc">Last 4 Quarters GST Return Receipts</div>
+                <div class="file-upload-status" id="doc2Status">✓ GSTR3B_FY25_Filings.pdf (2.1 MB)</div>
+              </div>
+
+              <!-- Doc 3 -->
+              <div class="file-upload-card" onclick="simulateFileUpload('doc3')">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--secondary-teal)" stroke-width="2" style="margin-bottom:8px;">
+                  <rect x="3" y="4" width="18" height="16" rx="2"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                </svg>
+                <div class="file-upload-title">Udyam Registration Certificate</div>
+                <div class="file-upload-desc">Proof of MSME / Startup recognition</div>
+                <div class="file-upload-status" id="doc3Status">✓ Udyam_Certificate_2026.pdf (1.4 MB)</div>
+              </div>
+
+            </div>
+
+            <div class="form-grid-2" style="margin-top:10px;">
+              <!-- Doc 4 -->
+              <div class="file-upload-card" onclick="simulateFileUpload('doc4')">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--secondary-teal)" stroke-width="2" style="margin-bottom:8px;">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <div class="file-upload-title">Non-Debarment / Non-Blacklisting Affidavit</div>
+                <div class="file-upload-desc">Notarized declaration confirming zero CVC / GeM debarments</div>
+                <div class="file-upload-status" id="doc4Status">✓ Non_Blacklisting_Affidavit.pdf (1.1 MB)</div>
+              </div>
+
+              <!-- Doc 5 -->
+              <div class="file-upload-card" onclick="simulateFileUpload('doc5')">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--secondary-teal)" stroke-width="2" style="margin-bottom:8px;">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <div class="file-upload-title">OEM Authorization & Quality ISO Certs</div>
+                <div class="file-upload-desc">Manufacturer Authorization Form (MAF) and ISO 9001:2015</div>
+                <div class="file-upload-status" id="doc5Status">✓ OEM_Authorization_ISO9001.pdf (4.6 MB)</div>
+              </div>
+            </div>
+
+            <!-- Upload help hint -->
+            <div style="font-size:12px; color:#64748B; margin-top:8px; display:flex; align-items:center; gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              Click any box to attach document. Sample files are pre-loaded for demo convenience.
+            </div>
+          </div>
+        </div>
+
+        <!-- Submission Actions -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:30px;">
+          <div>
+            <button type="submit" class="btn-action-primary" id="btnRunPreCheck">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              <span>Run PARAKH AI Pre-Check Scrutiny</span>
+            </button>
+            <button type="button" class="btn-action-secondary" onclick="resetBidderForm()" style="margin-left:8px;">
+              Reset Form
+            </button>
+          </div>
+
+          <div style="font-size:12px; color:#64748B;">
+            🛡️ Pre-Check does not submit to officers. It validates compliance readiness.
+          </div>
+        </div>
+
+      </form>
+
+      <!-- Real-time AI Scrutiny Results Panel -->
+      <div class="analysis-panel" id="analysisResultPanel">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #E2E8F0; padding-bottom:16px; margin-bottom:20px;">
+          <div>
+            <h3 style="font-size:1.2rem; font-weight:800; color:var(--primary-navy); margin:0;">
+              PARAKH AI Pre-Submission Scrutiny Diagnostic
+            </h3>
+            <p style="font-size:12.5px; color:#64748B; margin:4px 0 0;">
+              Evaluation ID: <code id="evalId">EVAL-2026-9081</code> | Timestamp: <span id="evalTime">05-Sep-2026 09:30:15 IST</span>
+            </p>
+          </div>
+          <div>
+            <span class="score-badge-huge score-pass" id="scoreBadge">94% Compliant</span>
+          </div>
+        </div>
+
+        <!-- Registry Cross Checks -->
+        <div class="form-grid-2" style="margin-bottom:20px;">
+          <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:12px;">
+            <div style="font-weight:700; font-size:12.5px; color:var(--primary-navy); margin-bottom:8px;">
+              Direct Statutory Registry Cross-Checks:
+            </div>
+            <div class="check-row">
+              <span>MCA21 Corporate Identity & Active Status:</span>
+              <strong style="color:#166534;" id="resMca">✓ Active (ROC Mumbai)</strong>
+            </div>
+            <div class="check-row">
+              <span>GSTN Registry & Return Reconciliation:</span>
+              <strong style="color:#166534;" id="resGst">✓ Active (Turnover: ₹16.2 Cr)</strong>
+            </div>
+            <div class="check-row">
+              <span>MSME / Udyam Certificate Validity:</span>
+              <strong style="color:#166534;" id="resUdyam">✓ Verified (Small Enterprise)</strong>
+            </div>
+            <div class="check-row">
+              <span>Central Debarment / CVC Blacklist:</span>
+              <strong style="color:#166534;" id="resDebar">✓ Clean Record (0 Matches)</strong>
+            </div>
+          </div>
+
+          <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:12px;">
+            <div style="font-weight:700; font-size:12.5px; color:var(--primary-navy); margin-bottom:8px;">
+              Statutory Requirement Matrix:
+            </div>
+            <div class="check-row">
+              <span>Average Annual Turnover Requirement:</span>
+              <strong style="color:#166534;" id="resTurnover">Pass (Exceeds ₹10 Cr min)</strong>
+            </div>
+            <div class="check-row">
+              <span>Earnest Money Deposit (EMD) Waiver:</span>
+              <strong style="color:#166534;" id="resEmd">Exempted under MSME Policy</strong>
+            </div>
+            <div class="check-row">
+              <span>Local Content (MII Order 2017):</span>
+              <strong style="color:#166534;" id="resMii">Class I Local Supplier (68%)</strong>
+            </div>
+            <div class="check-row">
+              <span>Risk Level Assessment:</span>
+              <strong style="color:#166534;" id="resRisk">LOW RISK</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Discrepancy Note if any -->
+        <div id="discrepancyBox" style="display:none; background:#FEF2F2; border:1px solid #FECACA; border-radius:6px; padding:14px; margin-bottom:18px;">
+          <strong style="color:#991B1B; font-size:13px; display:block; margin-bottom:4px;">
+            ⚠️ Statutory Discrepancy Detected by PARAKH AI:
+          </strong>
+          <span style="font-size:12.5px; color:#7F1D1D;" id="discrepancyMsg">
+            Declared turnover ₹16.50 Cr differs by &gt; 15% from GSTN GSTR-3B annualized receipts (₹9.80 Cr). Please rectify financial schedules before submitting to avoid scrutiny rejection.
+          </span>
+        </div>
+
+        <!-- Action bar -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid #E2E8F0; padding-top:16px;">
+          <button type="button" class="btn-action-secondary" onclick="viewCertificate()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            Generate Pre-Check Compliance Receipt
+          </button>
+
+          <button type="button" class="btn-action-primary" onclick="submitFinalBid()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+            Formally Submit Bid to GeM Evaluation Committee
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =====================================================================
+         TAB 2: MY SUBMITTED BIDS
+         ===================================================================== -->
+    <div id="tabMyBids" style="display:none;">
+      <div class="page-title-strip">
+        <div>
+          <h2>My Submitted GeM Bids & Scrutiny Status</h2>
+          <p>Real-time status tracking for tenders submitted through PARAKH AI compliance pipeline.</p>
+        </div>
+        <div>
+          <button type="button" class="btn-action-secondary" onclick="exportBidderCsv()">
+            Download Submissions (CSV)
+          </button>
+        </div>
+      </div>
+
+      <div class="gov-card">
+        <div class="table-responsive">
+          <table class="table-gov" id="bidderTable">
+            <thead>
+              <tr>
+                <th>Bid Reference</th>
+                <th>Tender Title</th>
+                <th>Procuring PSU</th>
+                <th>Value</th>
+                <th>Pre-Check Score</th>
+                <th>Status</th>
+                <th>Submitted On</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="bidderTbody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- =====================================================================
+         TAB 3: DIRECT REGISTRY CHECKER
+         ===================================================================== -->
+    <div id="tabRegistry" style="display:none;">
+      <div class="page-title-strip">
+        <div>
+          <h2>Instant Statutory Registry Verification Console</h2>
+          <p>Query centralized government APIs directly to verify vendor records before formulating bid proposals.</p>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <!-- MCA21 -->
+        <div class="gov-card">
+          <div class="gov-card-header">
+            <h3>MCA21 Ministry of Corporate Affairs</h3>
+          </div>
+          <div class="gov-card-body">
+            <div class="form-group">
+              <label class="form-label">Corporate Identification Number (CIN)</label>
+              <input type="text" id="regCin" class="form-control" value="U28112MH2014PTC254890">
+            </div>
+            <button type="button" class="btn-action-primary" onclick="queryRegistry('MCA21')">Check MCA21 Status</button>
+            <div id="resMcaDirect" style="margin-top:14px; font-size:12.5px; display:none; background:#F8FAFC; padding:10px; border-radius:6px; border:1px solid #CBD5E1;"></div>
+          </div>
+        </div>
+
+        <!-- GSTN -->
+        <div class="gov-card">
+          <div class="gov-card-header">
+            <h3>GSTN Goods & Services Tax Network</h3>
+          </div>
+          <div class="gov-card-body">
+            <div class="form-group">
+              <label class="form-label">Goods & Services Tax ID (GSTIN)</label>
+              <input type="text" id="regGst" class="form-control" value="27AABCB1234F1Z8">
+            </div>
+            <button type="button" class="btn-action-primary" onclick="queryRegistry('GSTN')">Check GSTN Return History</button>
+            <div id="resGstDirect" style="margin-top:14px; font-size:12.5px; display:none; background:#F8FAFC; padding:10px; border-radius:6px; border:1px solid #CBD5E1;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <!-- UDYAM -->
+        <div class="gov-card">
+          <div class="gov-card-header">
+            <h3>Ministry of MSME — Udyam Portal</h3>
+          </div>
+          <div class="gov-card-body">
+            <div class="form-group">
+              <label class="form-label">Udyam Registration Number</label>
+              <input type="text" id="regUdyamInput" class="form-control" value="UDYAM-MH-03-009121">
+            </div>
+            <button type="button" class="btn-action-primary" onclick="queryRegistry('UDYAM')">Verify MSME Category</button>
+            <div id="resUdyamDirect" style="margin-top:14px; font-size:12.5px; display:none; background:#F8FAFC; padding:10px; border-radius:6px; border:1px solid #CBD5E1;"></div>
+          </div>
+        </div>
+
+        <!-- DEBARMENT -->
+        <div class="gov-card">
+          <div class="gov-card-header">
+            <h3>Central Vigilance Commission Debarment Registry</h3>
+          </div>
+          <div class="gov-card-body">
+            <div class="form-group">
+              <label class="form-label">Entity Name / PAN</label>
+              <input type="text" id="regPan" class="form-control" value="AABCB1234F">
+            </div>
+            <button type="button" class="btn-action-primary" onclick="queryRegistry('DEBARMENT')">Check Debarment Status</button>
+            <div id="resDebarDirect" style="margin-top:14px; font-size:12.5px; display:none; background:#F8FAFC; padding:10px; border-radius:6px; border:1px solid #CBD5E1;"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Pre-Check Certificate Modal -->
+  <div class="cert-modal" id="certModal">
+    <div class="cert-paper">
+      <div style="text-align:center; border-bottom:2px solid #07264A; padding-bottom:14px; margin-bottom:16px;">
+        <img src="/static/images/parakh-logo.png" alt="Logo" style="height:48px; margin-bottom:6px;">
+        <h2 style="font-size:1.15rem; color:#07264A; margin:0;">GOVERNMENT OF INDIA — GOVERNMENT E-MARKETPLACE</h2>
+        <div style="font-size:11px; color:#64748B; font-weight:700; letter-spacing:0.5px;">
+          PARAKH AI BIDDER PRE-SUBMISSION COMPLIANCE CERTIFICATE
+        </div>
+      </div>
+
+      <div style="font-size:12.5px; line-height:1.6;">
+        <p>This certifies that the bid documents for <strong>Apex Turbomachinery Systems Pvt Ltd</strong> (GSTIN: <code>27AABCB1234F1Z8</code>) have undergone automated pre-submission compliance scrutiny against statutory requirements under Public Procurement Order 2017 & GeM GTC.</p>
+        
+        <table style="width:100%; margin:14px 0; border-collapse:collapse; font-size:12px;">
+          <tr style="border-bottom:1px solid #CBD5E1;"><td style="padding:6px; font-weight:700;">Tender Reference:</td><td style="padding:6px;" id="certTenderRef">GEM/2026/B/882194</td></tr>
+          <tr style="border-bottom:1px solid #CBD5E1;"><td style="padding:6px; font-weight:700;">Procuring Agency:</td><td style="padding:6px;" id="certPsu">GAIL (India) Ltd</td></tr>
+          <tr style="border-bottom:1px solid #CBD5E1;"><td style="padding:6px; font-weight:700;">Overall Readiness Score:</td><td style="padding:6px; color:#166534; font-weight:700;" id="certScore">94% (ELIGIBLE)</td></tr>
+          <tr style="border-bottom:1px solid #CBD5E1;"><td style="padding:6px; font-weight:700;">Cryptographic Verification ID:</td><td style="padding:6px; font-family:monospace;">PARAKH-PRV-9982-SHA256</td></tr>
+        </table>
+
+        <div style="background:#F1F5F9; border:1px solid #CBD5E1; padding:10px; border-radius:4px; font-size:11px; color:#475569;">
+          <strong>NOTE:</strong> This certificate guarantees document syntax, registry match, and threshold compliance. Final commercial acceptance remains subject to designated Procurement Officer digital signature.
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; margin-top:20px;">
+        <button type="button" class="btn-action-secondary" onclick="closeCertificate()">Close</button>
+        <button type="button" class="btn-action-primary" onclick="window.print()">Print / Save PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer style="background-color:#07264A; color:#94A3B8; text-align:center; padding:16px; font-size:12px; margin-top:auto;">
+    <div>PARAKH AI — Official Bidder Self-Service Portal | Government e-Marketplace</div>
+    <div style="margin-top:4px; color:#64748B;">Automating Trust in Public Procurement | Smart India Hackathon 2026</div>
+  </footer>
+
+  <!-- Bidder Portal Script -->
+  <script>
+    const INITIAL_BIDS = [
+      {
+        id: "GEM/2026/B/882194",
+        title: "Annual Calibration of Ultrasonic & Turbine Flow Meters",
+        psu: "GAIL (India) Ltd",
+        value: "₹ 480.00 Lakh",
+        score: "94%",
+        status: "Pre-Check Verified",
+        date: "04-Sep-2026 14:20"
+      },
+      {
+        id: "GEM/2026/B/771029",
+        title: "Supply of High-Pressure Ball Valves (API 6D Spec)",
+        psu: "IOCL Pipelines",
+        value: "₹ 1,250.00 Lakh",
+        score: "88%",
+        status: "Under Officer Scrutiny",
+        date: "28-Aug-2026 11:15"
+      },
+      {
+        id: "GEM/2026/B/660412",
+        title: "SCADA Telemetry System Hardware Upgrade (Offshore)",
+        psu: "ONGC Mumbai High",
+        value: "₹ 820.00 Lakh",
+        score: "96%",
+        status: "Accepted & Awarded",
+        date: "14-Aug-2026 16:40"
+      }
+    ];
+
+    let myBids = [...INITIAL_BIDS];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      renderMyBids();
+    });
+
+    function switchBidderTab(tabName) {
+      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tabIntake').style.display = 'none';
+      document.getElementById('tabMyBids').style.display = 'none';
+      document.getElementById('tabRegistry').style.display = 'none';
+
+      if (tabName === 'intake') {
+        document.querySelectorAll('.nav-tab-btn')[0].classList.add('active');
+        document.getElementById('tabIntake').style.display = 'block';
+      } else if (tabName === 'mybids') {
+        document.querySelectorAll('.nav-tab-btn')[1].classList.add('active');
+        document.getElementById('tabMyBids').style.display = 'block';
+      } else if (tabName === 'registry') {
+        document.querySelectorAll('.nav-tab-btn')[2].classList.add('active');
+        document.getElementById('tabRegistry').style.display = 'block';
+      }
+    }
+
+    function simulateFileUpload(docId) {
+      const el = document.getElementById(docId + 'Status');
+      if (el) {
+        el.style.display = 'block';
+      }
+    }
+
+    function autofillDemoBidder() {
+      document.getElementById('gemBidNo').value = "GEM/2026/B/882194";
+      document.getElementById('procuringPsu').value = "GAIL";
+      document.getElementById('tenderCategory').value = "Goods";
+      document.getElementById('tenderTitle').value = "Annual Maintenance & High-Precision Calibration of Custody Transfer Flow Meters";
+      document.getElementById('contractValue').value = "480.00";
+      document.getElementById('declaredTurnover').value = "16.50";
+      document.getElementById('msmeStatus').value = "Small";
+      document.getElementById('udyamNo').value = "UDYAM-MH-03-009121";
+      document.getElementById('localContent').value = "68";
+      document.getElementById('gstinDeclared').value = "27AABCB1234F1Z8";
+      document.getElementById('cinDeclared').value = "U28112MH2014PTC254890";
+
+      ['doc1', 'doc2', 'doc3', 'doc4', 'doc5'].forEach(simulateFileUpload);
+      alert("Sample compliant tender information and documents loaded!");
+    }
+
+    function autofillDiscrepantBidder() {
+      document.getElementById('gemBidNo').value = "GEM/2026/B/990312";
+      document.getElementById('procuringPsu').value = "ONGC";
+      document.getElementById('tenderCategory').value = "Works";
+      document.getElementById('tenderTitle').value = "Subsea Wellhead Valve Assembly Replacement";
+      document.getElementById('contractValue').value = "750.00";
+      document.getElementById('declaredTurnover').value = "45.00"; // Higher than GST returns
+      document.getElementById('msmeStatus').value = "General";
+      document.getElementById('udyamNo').value = "UNREGISTERED";
+      document.getElementById('localContent').value = "28"; // Below MII 50%
+      document.getElementById('gstinDeclared').value = "27AABCB1234F1Z8";
+      document.getElementById('cinDeclared').value = "U28112MH2014PTC254890";
+
+      ['doc1', 'doc2', 'doc3', 'doc4', 'doc5'].forEach(simulateFileUpload);
+      alert("Sample discrepant tender loaded! Run Pre-Check to view PARAKH AI discrepancy detection.");
+    }
+
+    function handlePreCheck(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnRunPreCheck');
+      btn.disabled = true;
+      btn.innerHTML = "<span>Analyzing Bid with PARAKH AI Scrutiny Engine...</span>";
+
+      const turnover = parseFloat(document.getElementById('declaredTurnover').value) || 0;
+      const localContent = parseInt(document.getElementById('localContent').value) || 0;
+
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Re-Run PARAKH AI Pre-Check</span>`;
+
+        const panel = document.getElementById('analysisResultPanel');
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth' });
+
+        const isDiscrepant = turnover > 25 || localContent < 50;
+
+        if (isDiscrepant) {
+          document.getElementById('scoreBadge').className = 'score-badge-huge score-flag';
+          document.getElementById('scoreBadge').textContent = '58% Flags Detected';
+          document.getElementById('resTurnover').innerHTML = '<span style="color:#DC2626;">Discrepancy: Declared ₹45 Cr vs GSTN ₹16.2 Cr</span>';
+          document.getElementById('resMii').innerHTML = '<span style="color:#DC2626;">Non-Compliant Local Content (28% &lt; 50% Req)</span>';
+          document.getElementById('resRisk').innerHTML = '<span style="color:#DC2626;">HIGH RISK</span>';
+          document.getElementById('discrepancyBox').style.display = 'block';
+          document.getElementById('discrepancyMsg').textContent = 'Turnover mismatch detected: Declared ₹' + turnover + ' Cr exceeds active GSTR-3B filings by > 50%. Also, Local Content of ' + localContent + '% fails Public Procurement Order threshold. Rectify before final submission.';
+        } else {
+          document.getElementById('scoreBadge').className = 'score-badge-huge score-pass';
+          document.getElementById('scoreBadge').textContent = '94% Pre-Check Passed';
+          document.getElementById('resTurnover').innerHTML = '<span style="color:#166534;">Pass (Declared ₹' + turnover + ' Cr matches GSTN)</span>';
+          document.getElementById('resMii').innerHTML = '<span style="color:#166534;">Class I Local Supplier (' + localContent + '%)</span>';
+          document.getElementById('resRisk').innerHTML = '<span style="color:#166534;">LOW RISK</span>';
+          document.getElementById('discrepancyBox').style.display = 'none';
+        }
+
+        document.getElementById('evalId').textContent = 'EVAL-2026-' + Math.floor(1000 + Math.random() * 9000);
+        document.getElementById('evalTime').textContent = new Date().toLocaleString() + ' IST';
+      }, 700);
+    }
+
+    function viewCertificate() {
+      const bidNo = document.getElementById('gemBidNo').value;
+      const psu = document.getElementById('procuringPsu').options[document.getElementById('procuringPsu').selectedIndex].text;
+      const score = document.getElementById('scoreBadge').textContent;
+
+      document.getElementById('certTenderRef').textContent = bidNo;
+      document.getElementById('certPsu').textContent = psu;
+      document.getElementById('certScore').textContent = score;
+      document.getElementById('certModal').style.display = 'flex';
+    }
+
+    function closeCertificate() {
+      document.getElementById('certModal').style.display = 'none';
+    }
+
+    function submitFinalBid() {
+      const bidNo = document.getElementById('gemBidNo').value;
+      const title = document.getElementById('tenderTitle').value;
+      const psu = document.getElementById('procuringPsu').value;
+      const value = '₹ ' + document.getElementById('contractValue').value + ' Lakh';
+      const score = document.getElementById('scoreBadge').textContent;
+
+      const newBid = {
+        id: bidNo,
+        title: title,
+        psu: psu,
+        value: value,
+        score: score.split(' ')[0],
+        status: "Submitted to GeM",
+        date: new Date().toISOString().slice(0, 10)
+      };
+
+      myBids.unshift(newBid);
+      renderMyBids();
+      document.getElementById('bidsCountBadge').textContent = myBids.length;
+      alert(`Bid [${bidNo}] has been successfully submitted to the GeM Procurement Scrutiny Committee!`);
+      switchBidderTab('mybids');
+    }
+
+    function renderMyBids() {
+      const tbody = document.getElementById('bidderTbody');
+      tbody.innerHTML = '';
+
+      myBids.forEach(b => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${b.id}</strong></td>
+          <td>${b.title}</td>
+          <td>${b.psu}</td>
+          <td>${b.value}</td>
+          <td><span class="badge ${parseInt(b.score) > 80 ? 'badge-success' : 'badge-danger'}">${b.score}</span></td>
+          <td><span class="badge badge-info">${b.status}</span></td>
+          <td>${b.date}</td>
+          <td>
+            <button class="btn btn-sm btn-secondary" onclick="alert('Viewing GeM Scrutiny Brief for: ' + '${b.id}')">View Details</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function queryRegistry(type) {
+      if (type === 'MCA21') {
+        const out = document.getElementById('resMcaDirect');
+        out.style.display = 'block';
+        out.innerHTML = `<strong>MCA21 Registry Response:</strong><br>Company: Apex Turbomachinery Systems Pvt Ltd<br>Status: <span style="color:#166534; font-weight:bold;">ACTIVE</span> | ROC Mumbai | Filing Date: 30-Nov-2025`;
+      } else if (type === 'GSTN') {
+        const out = document.getElementById('resGstDirect');
+        out.style.display = 'block';
+        out.innerHTML = `<strong>GSTN Verification:</strong><br>GSTIN: 27AABCB1234F1Z8 | Status: <span style="color:#166534; font-weight:bold;">ACTIVE</span><br>GSTR-3B Filings: Current (No defaults) | Turnover: ₹16.20 Cr`;
+      } else if (type === 'UDYAM') {
+        const out = document.getElementById('resUdyamDirect');
+        out.style.display = 'block';
+        out.innerHTML = `<strong>MSME Udyam Gateway:</strong><br>Udyam: UDYAM-MH-03-009121 | Class: <span style="color:#166534; font-weight:bold;">Small Enterprise</span><br>Eligible for EMD & Tender Fee Exemption under GeM rules.`;
+      } else if (type === 'DEBARMENT') {
+        const out = document.getElementById('resDebarDirect');
+        out.style.display = 'block';
+        out.innerHTML = `<strong>CVC & GeM Debarment Watchlist:</strong><br>PAN: AABCB1234F | Status: <span style="color:#166534; font-weight:bold;">CLEAN</span> (0 debarments or disciplinary orders recorded).`;
+      }
+    }
+
+    function exportBidderCsv() {
+      let csv = "Bid ID,Tender Title,PSU,Value,Score,Status,Date\n";
+      myBids.forEach(b => {
+        csv += `"${b.id}","${b.title}","${b.psu}","${b.value}","${b.score}","${b.status}","${b.date}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `GeM_Bidder_Submissions_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function resetBidderForm() {
+      document.getElementById('bidderForm').reset();
+      document.getElementById('analysisResultPanel').style.display = 'none';
+      ['doc1Status', 'doc2Status', 'doc3Status', 'doc4Status', 'doc5Status'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+    }
+  </script>
+</body>
+</html>
