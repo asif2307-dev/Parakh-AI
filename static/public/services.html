@@ -16,7 +16,12 @@
     <div id="navbar-container"></div>
     
     <main>
-        <div class="page-header">
+        <div style="max-width: 1000px; margin: 16px auto 0; padding: 0 32px;">
+            <button type="button" onclick="if(window.history.length > 1){ window.history.back(); } else { window.location.href='/'; }" style="display:inline-flex; align-items:center; gap:6px; background:#FFFFFF; border:1px solid #CBD5E1; color:#07264A; padding:6px 14px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                &larr; Back to Previous Page
+            </button>
+        </div>
+        <div class="page-header" style="margin-top:12px;">
             <h1>Our Services</h1>
             <p>Comprehensive tools for statutory compliance and bid scrutiny.</p>
         </div>

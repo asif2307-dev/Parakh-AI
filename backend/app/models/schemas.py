@@ -175,6 +175,7 @@ class SmartBidWeightConfig(BaseModel):
     quality_weight: float = 0.15
     financial_weight: float = 0.10
     price_weight: float = 0.15
+    integrity_weight: float = 0.15
 
 class SmartBidEvaluationResult(BaseModel):
     bid_id: str
@@ -187,10 +188,72 @@ class SmartBidEvaluationResult(BaseModel):
     quality_score: float
     financial_score: float
     price_score: float
+    integrity_score: Optional[float] = 100.0
     risk_deduction: float
     debarment_status: str
     value_for_money_rank: int
     recommendation_summary: str
     factor_breakdown: List[Dict[str, Any]]
-    perspective_ranks: Dict[str, int] # overall, vfm, experience, performance, compliance, risk
+    perspective_ranks: Dict[str, int] # overall, vfm, experience, performance, compliance, risk, integrity, risk_adjusted_vfm
+
+class RiskSignalItem(BaseModel):
+    id: str
+    bidder_id: Optional[str] = None
+    category: str
+    severity: str
+    title: str
+    description: str
+    status: str
+    source: str
+    source_type: str
+    source_reference: str
+    evidence: str
+    record_date: str
+    retrieved_at: Optional[str] = None
+    confidence: str
+    is_authoritative: bool
+    review_status: str
+    review_notes: Optional[str] = None
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[str] = None
+
+class EarlyWarningItem(BaseModel):
+    id: str
+    bidder_id: str
+    severity: str
+    title: str
+    risk_summary: str
+    source_authority: str
+    evidence_reference: str
+    recommended_action: str
+    is_acknowledged: bool = False
+    acknowledged_by: Optional[str] = None
+    acknowledged_at: Optional[str] = None
+    created_at: str
+
+class IntegrityProfileResponse(BaseModel):
+    bidder_id: str
+    vendor_name: str
+    integrity_score: float
+    risk_level: str # LOW, MEDIUM, HIGH
+    debarment_status: str
+    violations_count: int
+    litigation_status: str
+    performance_rating: float
+    early_warnings_count: int
+    dimension_scores: Dict[str, float]
+    early_warnings: List[EarlyWarningItem]
+    risk_signals: List[RiskSignalItem]
+    audit_signature: str
+    last_checked: str
+
+class RiskSignalReviewRequest(BaseModel):
+    action: str # REVIEWED, ACKNOWLEDGED, OVERRIDDEN, DISMISSED
+    officer_name: str
+    review_notes: str
+
+class EarlyWarningAcknowledgeRequest(BaseModel):
+    officer_name: str
+    acknowledgment_notes: Optional[str] = None
+
 

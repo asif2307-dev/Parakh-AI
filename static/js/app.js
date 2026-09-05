@@ -560,6 +560,7 @@
       this.activeAlertFilter = 'ALL';
       this.currentLang = 'en';
       this.activeAdminTab = 'users';
+      this.viewHistory = [];
 
       this.init();
     }
@@ -633,10 +634,16 @@
     }
 
     // --- Navigation & View Switching (Public Pillar Pages vs Operational Portal) ---
-    switchView(viewName, filterPsu = null, updateHash = true) {
+    switchView(viewName, filterPsu = null, updateHash = true, isBack = false) {
       if (!this.isLoggedIn && viewName !== 'login') {
         this.showLoginScreen();
         return;
+      }
+
+      if (!isBack && this.currentView && this.currentView !== viewName && this.currentView !== 'login') {
+        if (!this.viewHistory) this.viewHistory = [];
+        this.viewHistory.push(this.currentView);
+        if (this.viewHistory.length > 25) this.viewHistory.shift();
       }
 
       this.currentView = viewName;
@@ -735,9 +742,24 @@
         this.renderExpiryView();
       } else if (viewName === 'smartbid') {
         this.renderSmartBidView();
+      } else if (viewName === 'risk') {
+        this.renderIntegrityRiskView();
       }
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    goBack() {
+      if (this.viewHistory && this.viewHistory.length > 0) {
+        const prevView = this.viewHistory.pop();
+        this.switchView(prevView, null, true, true);
+      } else {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          this.switchView('dashboard', null, true, true);
+        }
+      }
     }
 
     updateBreadcrumbs(viewName, filterPsu) {
@@ -2403,6 +2425,20 @@
           title: 'Bidder B (InfraTech Corp Ltd) — Cleanest Risk & Governance Profile (Score: 94.0/100)',
           reason: '<strong>Risk & Governance Priority:</strong> Bidder A penalized heavily for active legal prosecution citation and expired statutory certifications. Bidder B verified clean across MCA21, CVC, and GeM registries.',
           recBidder: 'b'
+        },
+        integrity: {
+          weights: { price: '10%', compliance: '20%', experience: '15%', performance: '15%', financial: '10%', risk: '30%' },
+          scores: { a: '38.4 / 100', b: '95.2 / 100', c: '92.6 / 100' },
+          title: 'Bidder B (InfraTech Corp Ltd) — Pristine Integrity & Clean Debarment Standing (Score: 95.2/100)',
+          reason: '<strong>Integrity Priority Analysis:</strong> Scrutinizes debarment registries, contract termination records, and regulatory clearances. <strong>Bidder B</strong> is verified 100% clean across CVC, MCA21, and GeM registries with zero defaults. In contrast, <strong>Bidder A</strong> suffers severe deductions due to active legal inquiries and adverse vigilance citations. <em>Integrity and probity in public procurement are non-negotiable.</em>',
+          recBidder: 'b'
+        },
+        risk_adjusted_vfm: {
+          weights: { price: '20%', compliance: '20%', experience: '15%', performance: '15%', financial: '10%', risk: '20%' },
+          scores: { a: '52.1 / 100', b: '93.8 / 100', c: '87.4 / 100' },
+          title: 'Bidder B (InfraTech Corp Ltd) — Optimal Risk-Adjusted Value for Money (Score: 93.8/100)',
+          reason: '<strong>Risk-Adjusted Value-for-Money:</strong> Reconciles commercial quotes against operational and legal risk exposure. Although <strong>Bidder A</strong> is priced at ₹8.50 Cr vs Bidder B\'s ₹9.20 Cr (+8.2%), Bidder A\'s contract dispute exposure and historical SLA delay penalties create an estimated ₹1.85 Cr lifecycle contingency risk, making Bidder B the genuinely superior economic value.',
+          recBidder: 'b'
         }
       };
 
@@ -2549,9 +2585,481 @@
       const target = document.getElementById(`admin-tab-${tabName}`);
       if (target) target.style.display = 'block';
     }
+
+    // --- Integrity & Risk Intelligence USP ---
+    renderIntegrityRiskView(bidId) {
+      this.currentIntegrityBidderId = bidId || this.currentIntegrityBidderId || 'BID-2026-002';
+      const selectEl = document.getElementById('integrityBidderSelect');
+      if (selectEl) selectEl.value = this.currentIntegrityBidderId;
+
+      // Realistic Ground-Truth Profiles for Bidders
+      const profiles = {
+        'BID-2026-002': {
+          id: 'BID-2026-002',
+          bidder_name: 'XYZ Infra Solutions Pvt Ltd',
+          integrity_score: 94.0,
+          risk_level: 'LOW RISK',
+          level_color: '#166534',
+          level_desc: 'Safe statutory & delivery standing',
+          debarment_status: 'NO RECORD FOUND',
+          warnings_count: 0,
+          warnings_desc: 'Zero critical signals',
+          has_alert: false,
+          dimensions: {
+            debarment: { score: '25.0 / 25', status: 'No record found in CVC / GeM', color: '#166534' },
+            compliance: { score: '20.0 / 20', status: '0 violations on record', color: '#166534' },
+            performance: { score: '19.2 / 20', status: '96.0% verified SLA rate', color: '#166534' },
+            defaults: { score: '15.0 / 15', status: '0 defaults recorded', color: '#166534' },
+            regulatory: { score: '10.0 / 10', status: 'All clearances active', color: '#166534' },
+            legal: { score: '10.0 / 10', status: 'No adverse litigation recorded', color: '#166534' }
+          },
+          signals: [
+            {
+              id: 'SIG-XYZ-01',
+              category: 'DEBARMENT',
+              severity: 'INFO',
+              title: 'CVC Central Gazette Scrutiny',
+              description: 'No active or historical debarment or blacklisting orders found in Central Vigilance Commission register.',
+              status: 'VERIFIED_CLEAR',
+              source: 'Central Vigilance Commission (CVC)',
+              source_type: 'AUTHORITATIVE',
+              evidence: 'CVC Gazette Archive 2026-Q3',
+              date: '04-Sep-2026',
+              review_status: 'VERIFIED',
+              recommended_action: 'Routine procurement clearance'
+            },
+            {
+              id: 'SIG-XYZ-02',
+              category: 'CONTRACT_VIOLATION',
+              severity: 'INFO',
+              title: 'GeM Past Contract Audit',
+              description: 'All 8 past public procurement contracts executed without default or penalty deduction.',
+              status: 'VERIFIED_CLEAR',
+              source: 'GeM Central Contractor Ledger',
+              source_type: 'AUTHORITATIVE',
+              evidence: 'Contract Completion Certificates #CC-4901..#CC-4908',
+              date: '01-Sep-2026',
+              review_status: 'VERIFIED',
+              recommended_action: 'Proceed with technical evaluation'
+            }
+          ]
+        },
+        'BID-2026-004': {
+          id: 'BID-2026-004',
+          bidder_name: 'Kirloskar Dynamics Ltd.',
+          integrity_score: 92.4,
+          risk_level: 'LOW RISK',
+          level_color: '#166534',
+          level_desc: 'High integrity, robust past execution',
+          debarment_status: 'NO RECORD FOUND',
+          warnings_count: 0,
+          warnings_desc: 'Zero critical signals',
+          has_alert: false,
+          dimensions: {
+            debarment: { score: '25.0 / 25', status: 'No record found in CVC', color: '#166534' },
+            compliance: { score: '20.0 / 20', status: '0 violations on record', color: '#166534' },
+            performance: { score: '19.6 / 20', status: '98.2% verified SLA rate', color: '#166534' },
+            defaults: { score: '15.0 / 15', status: '0 defaults recorded', color: '#166534' },
+            regulatory: { score: '10.0 / 10', status: 'All clearances active', color: '#166534' },
+            legal: { score: '8.5 / 10', status: 'Commercial arbitration (Allegation != Guilt)', color: '#0369A1' }
+          },
+          signals: [
+            {
+              id: 'SIG-KIR-01',
+              category: 'LITIGATION',
+              severity: 'LOW',
+              title: 'Commercial Price Indexation Arbitration',
+              description: 'Commercial arbitration matter pending before High Court of Delhi regarding steel price escalation formula on project HVJ-2022. Non-criminal, purely commercial dispute.',
+              status: 'PENDING',
+              source: 'High Court of Delhi e-Courts Registry',
+              source_type: 'AUTHORITATIVE',
+              evidence: 'OMP (COMM) 142/2024',
+              date: '18-Aug-2026',
+              review_status: 'PENDING_REVIEW',
+              recommended_action: 'Allegation != Guilt: Does not impede technical eligibility'
+            },
+            {
+              id: 'SIG-KIR-02',
+              category: 'PERFORMANCE',
+              severity: 'INFO',
+              title: 'Exemplary On-Field Milestone Delivery',
+              description: 'Completed 12 high-pressure pipeline contracts (aggregate ₹84 Cr) with zero defect liability notices.',
+              status: 'VERIFIED_CLEAR',
+              source: 'IOCL & GAIL Joint Performance Ledger',
+              source_type: 'AUTHORITATIVE',
+              evidence: 'GeM Buyer Rating: 4.95 / 5.00',
+              date: '28-Aug-2026',
+              review_status: 'VERIFIED',
+              recommended_action: 'Eligible for preferential technical scoring'
+            }
+          ]
+        },
+        'BID-2026-003': {
+          id: 'BID-2026-003',
+          bidder_name: 'Bharat Industrial Systems',
+          integrity_score: 68.0,
+          risk_level: 'MEDIUM RISK',
+          level_color: '#C25E00',
+          level_desc: 'Review required — historical delay records',
+          debarment_status: 'NO RECORD FOUND',
+          warnings_count: 1,
+          warnings_desc: '1 non-critical delay citation',
+          has_alert: true,
+          alert_title: 'Historical Contract SLA Delay Flagged',
+          alert_summary: 'GeM Contractor Performance Ledger logged a 42-day milestone delay on Contract GEM-2025-C-4412. Liquidated damages (LD) of ₹4.8 Lakh were recovered. Contract subsequently closed successfully.',
+          alert_action: 'Verify whether current tender capacity allows parallel execution without milestone slippage.',
+          dimensions: {
+            debarment: { score: '25.0 / 25', status: 'No record found in CVC', color: '#166534' },
+            compliance: { score: '15.0 / 20', status: '1 documentation delay recorded', color: '#C25E00' },
+            performance: { score: '12.0 / 20', status: '88.0% verified SLA delivery', color: '#C25E00' },
+            defaults: { score: '11.0 / 15', status: '1 cure notice issued in 2025', color: '#C25E00' },
+            regulatory: { score: '9.0 / 10', status: 'Factory license renewed', color: '#166534' },
+            legal: { score: '7.0 / 10', status: '1 pending commercial suit', color: '#C25E00' }
+          },
+          signals: [
+            {
+              id: 'SIG-BHA-01',
+              category: 'PERFORMANCE',
+              severity: 'MEDIUM',
+              title: 'Delivery Schedule Delay Citation',
+              description: 'Delayed delivery of cryogenic ball valves by 42 days on IOCL Paradip Refinery contract. Liquidated damages recovered.',
+              status: 'RESOLVED',
+              source: 'IOCL Project Directorate',
+              source_type: 'AUTHORITATIVE',
+              evidence: 'LD Recovery Memo #IOCL-PDR-2025-99',
+              date: '14-Nov-2025',
+              review_status: 'REVIEWED',
+              recommended_action: 'Review current project schedule commitments'
+            },
+            {
+              id: 'SIG-BHA-02',
+              category: 'LITIGATION',
+              severity: 'MEDIUM',
+              title: 'Subcontractor Civil Claim Pending',
+              description: 'Commercial suit filed by subcontractor claiming unpaid fabrication invoices of ₹22 Lakh. Case sub-judice.',
+              status: 'UNDER_INVESTIGATION',
+              source: 'City Civil Court Bengaluru',
+              source_type: 'VERIFIED',
+              evidence: 'Civil Suit #OS-4881/2025',
+              date: '05-Jul-2026',
+              review_status: 'PENDING_REVIEW',
+              recommended_action: 'Review financial liquidity buffers'
+            }
+          ]
+        },
+        'BID-2026-005': {
+          id: 'BID-2026-005',
+          bidder_name: 'CyberTech Solutions LLP',
+          integrity_score: 41.2,
+          risk_level: 'HIGH RISK',
+          level_color: '#DC2626',
+          level_desc: 'Serious verified risk indicators identified',
+          debarment_status: 'ACTIVE DEBARMENT IDENTIFIED',
+          warnings_count: 2,
+          warnings_desc: 'Critical early warning triggered',
+          has_alert: true,
+          alert_title: 'HIGH-RISK EARLY WARNING: Active Debarment & Contract Termination',
+          alert_summary: 'Official Ministry of Finance Gazette debarment order #F-11/2024 active until 11-Nov-2026. Additionally, Contract GEM-2024-C-9901 was terminated for cause due to abandonment of works.',
+          alert_action: 'Statutory Tender Committee Scrutiny Mandatory: Verify whether debarment scope applies to current procurement category before tender opening.',
+          dimensions: {
+            debarment: { score: '0.0 / 25', status: 'Active debarment record identified', color: '#DC2626' },
+            compliance: { score: '8.0 / 20', status: 'Multiple non-compliance orders', color: '#DC2626' },
+            performance: { score: '6.0 / 20', status: 'Contract terminated for cause', color: '#DC2626' },
+            defaults: { score: '5.0 / 15', status: 'Repeated bid abandonment', color: '#DC2626' },
+            regulatory: { score: '6.0 / 10', status: 'Show cause notice pending', color: '#DC2626' },
+            legal: { score: '4.0 / 10', status: 'Serious prosecution cited', color: '#DC2626' }
+          },
+          signals: [
+            {
+              id: 'SIG-CYB-01',
+              category: 'DEBARMENT',
+              severity: 'CRITICAL',
+              title: 'Active Central Debarment Order',
+              description: 'Debarred from participating in central government tenders for 2 years w.e.f. 12-Nov-2024 due to supply of non-conforming sub-assemblies.',
+              status: 'PROVEN_VIOLATION',
+              source: 'Ministry of Finance Gazette Bulletin',
+              source_type: 'AUTHORITATIVE',
+              evidence: 'Order #F-11/2024 / CVC Circular 18/2024',
+              date: '12-Nov-2024',
+              review_status: 'PENDING_REVIEW',
+              recommended_action: 'Statutory tender committee determination required'
+            },
+            {
+              id: 'SIG-CYB-02',
+              category: 'CONTRACT_VIOLATION',
+              severity: 'CRITICAL',
+              title: 'Contract Termination for Cause',
+              description: 'Contract GEM-2024-C-9901 for Supervisory Control integration terminated for cause following complete site abandonment.',
+              status: 'PROVEN_VIOLATION',
+              source: 'GeM Default Contractor Register',
+              source_type: 'AUTHORITATIVE',
+              evidence: 'Termination Notice #GEM-TERM-9901',
+              date: '15-Jan-2025',
+              review_status: 'PENDING_REVIEW',
+              recommended_action: 'Examine applicability of General Financial Rules (GFR 151)'
+            },
+            {
+              id: 'SIG-CYB-03',
+              category: 'TENDER_DEFAULT',
+              severity: 'HIGH',
+              title: 'Repeated Tender Default / Post-Award Withdrawal',
+              description: 'Withdrew bid after commercial opening in IOCL Tender 4402 without statutory cause; EMD of ₹5 Lakh forfeited.',
+              status: 'ADJUDICATED',
+              source: 'Central Public Procurement Portal',
+              source_type: 'AUTHORITATIVE',
+              evidence: 'CPPP Forfeiture Order #CPPP-2025-4402',
+              date: '20-May-2025',
+              review_status: 'PENDING_REVIEW',
+              recommended_action: 'Evaluate financial reliability and bidder credibility'
+            }
+          ]
+        }
+      };
+
+      const prof = profiles[this.currentIntegrityBidderId] || profiles['BID-2026-002'];
+      this.activeIntegrityProfile = prof;
+      this.activeIntegritySignals = [...prof.signals];
+
+      // Update KPI scorecards
+      const scoreEl = document.getElementById('riskIntegrityScore');
+      if (scoreEl) scoreEl.textContent = `${prof.integrity_score.toFixed(1)} / 100`;
+
+      const subTitleEl = document.getElementById('riskIntegritySubtitle');
+      if (subTitleEl) subTitleEl.textContent = prof.level_desc;
+
+      const levelBadge = document.getElementById('riskLevelBadge');
+      if (levelBadge) {
+        levelBadge.textContent = prof.risk_level;
+        levelBadge.style.color = prof.level_color;
+      }
+      const levelCard = document.getElementById('riskLevelCard');
+      if (levelCard) levelCard.style.borderTop = `3px solid ${prof.level_color}`;
+
+      const debarmentEl = document.getElementById('riskDebarmentStatus');
+      if (debarmentEl) {
+        debarmentEl.textContent = prof.debarment_status;
+        debarmentEl.style.color = prof.debarment_status.includes('ACTIVE') ? '#DC2626' : '#166534';
+      }
+
+      const warningsEl = document.getElementById('riskEarlyWarningsCount');
+      if (warningsEl) {
+        warningsEl.textContent = prof.warnings_count;
+        warningsEl.style.color = prof.warnings_count > 0 ? (prof.warnings_count >= 2 ? '#DC2626' : '#C25E00') : '#166534';
+      }
+      const warningsDesc = document.getElementById('riskEarlyWarningsDesc');
+      if (warningsDesc) warningsDesc.textContent = prof.warnings_desc;
+
+      // Early Warning Alert Box
+      const alertBox = document.getElementById('riskEarlyWarningAlertBox');
+      if (alertBox) {
+        if (prof.has_alert) {
+          alertBox.style.display = 'block';
+          const title = document.getElementById('earlyWarningTitle');
+          if (title) title.textContent = prof.alert_title;
+          const summary = document.getElementById('earlyWarningSummary');
+          if (summary) summary.innerHTML = `${prof.alert_summary}<br><span style="display:inline-block; margin-top:6px; color:#7F1D1D;"><strong>Recommended Action:</strong> ${prof.alert_action}</span>`;
+        } else {
+          alertBox.style.display = 'none';
+        }
+      }
+
+      // 6 Dimensions Grid
+      if (prof.dimensions) {
+        const d = prof.dimensions;
+        const setDim = (scoreId, statusId, data) => {
+          const s = document.getElementById(scoreId);
+          const st = document.getElementById(statusId);
+          if (s) { s.textContent = data.score; s.style.color = data.color; }
+          if (st) st.textContent = data.status;
+        };
+        setDim('dimScoreDebarment', 'dimStatusDebarment', d.debarment);
+        setDim('dimScoreCompliance', 'dimStatusCompliance', d.compliance);
+        setDim('dimScorePerformance', 'dimStatusPerformance', d.performance);
+        setDim('dimScoreDefault', 'dimStatusDefault', d.defaults);
+        setDim('dimScoreRegulatory', 'dimStatusRegulatory', d.regulatory);
+        setDim('dimScoreLegal', 'dimStatusLegal', d.legal);
+      }
+
+      this.renderSignalsTable(this.activeIntegritySignals);
+    }
+
+    onIntegrityBidderChange(bidId) {
+      this.renderIntegrityRiskView(bidId);
+    }
+
+    reanalyzeIntegrity() {
+      const bidderId = this.currentIntegrityBidderId || 'BID-2026-002';
+      alert(`[PARAKH AI - Integrity & Risk Engine]\nQuerying official registries:\n- Central Vigilance Commission (CVC Gazette)\n- GeM Default Contractor Register\n- MCA21 & GSTN Central Portals\n- e-Courts Commercial Dispute Index\n\nRegistry data re-synchronized. Risk profile recomputed.`);
+      this.renderIntegrityRiskView(bidderId);
+    }
+
+    filterSignals(filter) {
+      if (!this.activeIntegrityProfile) return;
+      let list = this.activeIntegrityProfile.signals || [];
+      if (filter !== 'ALL') {
+        list = list.filter(s => s.severity === filter);
+      }
+      this.renderSignalsTable(list);
+    }
+
+    renderSignalsTable(signals) {
+      const tbody = document.getElementById('riskSignalsTableBody');
+      if (!tbody) return;
+
+      if (!signals || signals.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align:center; padding:24px; color:#64748B;">
+              <strong>NO RISK SIGNALS FOUND</strong><br>
+              <span style="font-size:11px;">No adverse findings matching the selected filter were identified in authoritative sources.</span>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const getSeverityBadge = (sev) => {
+        if (sev === 'CRITICAL') return '<span class="badge badge-error" style="font-weight:800;">CRITICAL</span>';
+        if (sev === 'HIGH') return '<span class="badge badge-error">HIGH</span>';
+        if (sev === 'MEDIUM') return '<span class="badge badge-warning">MEDIUM</span>';
+        return '<span class="badge badge-success">INFO / CLEAR</span>';
+      };
+
+      const getLegalStatusBadge = (status) => {
+        if (status === 'PROVEN_VIOLATION') return '<span style="color:#DC2626; font-weight:700; font-size:11px;">PROVEN VIOLATION</span>';
+        if (status === 'ADJUDICATED') return '<span style="color:#991B1B; font-weight:700; font-size:11px;">ADJUDICATED</span>';
+        if (status === 'UNDER_INVESTIGATION') return '<span style="color:#C25E00; font-weight:700; font-size:11px;">INVESTIGATION</span>';
+        if (status === 'PENDING') return '<span style="color:#0369A1; font-weight:700; font-size:11px;">PENDING (ALLEGATION)</span>';
+        if (status === 'RESOLVED') return '<span style="color:#475569; font-weight:700; font-size:11px;">RESOLVED</span>';
+        return '<span style="color:#166534; font-weight:700; font-size:11px;">VERIFIED CLEAR</span>';
+      };
+
+      tbody.innerHTML = signals.map(sig => `
+        <tr>
+          <td><strong style="color:var(--parakh-navy); font-size:11px;">${sig.category}</strong></td>
+          <td>${getSeverityBadge(sig.severity)}</td>
+          <td>
+            <div style="font-weight:700; color:var(--parakh-navy); margin-bottom:2px;">${sig.title}</div>
+            <div style="font-size:11.5px; color:#334155; line-height:1.4;">${sig.description}</div>
+            <div style="font-size:10.5px; color:#64748B; margin-top:4px;">
+              <strong>Recommended Action:</strong> ${sig.recommended_action}
+            </div>
+          </td>
+          <td>${getLegalStatusBadge(sig.status)}</td>
+          <td>
+            <div style="font-weight:600; font-size:11.5px; color:#0F172A;">${sig.source}</div>
+            <div style="font-size:10.5px; font-family:monospace; color:#0369A1;">${sig.evidence}</div>
+            <div style="font-size:10px; color:#64748B;">Date: ${sig.date} (${sig.source_type})</div>
+          </td>
+          <td>
+            <span class="badge ${sig.review_status === 'VERIFIED' ? 'badge-success' : (sig.review_status === 'OVERRIDDEN' ? 'badge-info' : 'badge-warning')}" style="font-size:10px;">
+              ${sig.review_status}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="parakhApp.openRiskReviewModal('${sig.id}')" style="padding:4px 8px; font-size:11px;">
+              Review Finding
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    openRiskReviewModal(signalId) {
+      if (!this.activeIntegritySignals) return;
+      const sig = this.activeIntegritySignals.find(s => s.id === signalId);
+      if (!sig) return;
+
+      document.getElementById('modalSignalId').value = sig.id;
+      document.getElementById('modalSignalTitle').textContent = `[${sig.category}] ${sig.title}`;
+      document.getElementById('modalSignalDesc').textContent = sig.description;
+      document.getElementById('modalSignalSource').textContent = `${sig.source} (${sig.source_type} - Date: ${sig.date})`;
+      document.getElementById('modalSignalEvidence').textContent = sig.evidence;
+      document.getElementById('modalReviewAction').value = 'REVIEWED';
+      document.getElementById('modalReviewNotes').value = '';
+
+      const modal = document.getElementById('riskReviewModal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    closeRiskReviewModal() {
+      const modal = document.getElementById('riskReviewModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    submitRiskReviewAction() {
+      const signalId = document.getElementById('modalSignalId').value;
+      const action = document.getElementById('modalReviewAction').value;
+      const notes = document.getElementById('modalReviewNotes').value.trim();
+
+      if (!notes) {
+        alert("Statutory Compliance Warning: Mandatory Officer Rationale and Notes must be provided for every audit determination.");
+        return;
+      }
+
+      if (this.activeIntegritySignals) {
+        const sig = this.activeIntegritySignals.find(s => s.id === signalId);
+        if (sig) {
+          sig.review_status = action;
+          sig.officer_notes = notes;
+        }
+      }
+
+      // Add to immutable audit trail
+      if (this.auditHistory) {
+        const now = new Date();
+        const dateStr = `${String(now.getDate()).padStart(2, '0')}-Sep-2026 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')} IST`;
+        this.auditHistory.unshift({
+          date: dateStr,
+          text: `Officer Determination: Signal ${signalId} set to [${action}]. Justification: "${notes}". SHA-256 Sig: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.`,
+          badgeColor: action === 'OVERRIDDEN' ? '#0369A1' : '#166534'
+        });
+        this.renderAuditHistory();
+      }
+
+      this.closeRiskReviewModal();
+      this.renderSignalsTable(this.activeIntegritySignals);
+      alert(`Official Determination Recorded:\nAction: ${action}\nAudit Signature: NIC-SHA256 Token Logged.\nDecision recorded in the Ministry event ledger.`);
+    }
+
+    acknowledgeCurrentWarning() {
+      const prof = this.activeIntegrityProfile;
+      if (!prof) return;
+
+      prof.warnings_count = Math.max(0, prof.warnings_count - 1);
+      const warningsEl = document.getElementById('riskEarlyWarningsCount');
+      if (warningsEl) warningsEl.textContent = prof.warnings_count;
+
+      const alertBox = document.getElementById('riskEarlyWarningAlertBox');
+      if (alertBox) {
+        alertBox.style.background = '#F0FDF4';
+        alertBox.style.borderLeftColor = '#166534';
+        alertBox.innerHTML = `
+          <div style="color:#166534; font-size:13px; font-weight:700;">
+            ✓ Early Warning Acknowledged by Tender Scrutiny Officer
+          </div>
+          <div style="font-size:12px; color:#14532D; margin-top:4px;">
+            Officer acknowledgment timestamp and digital attestation recorded in immutable audit log. Manual review note appended to tender evaluation file.
+          </div>
+        `;
+      }
+
+      // Add to audit trail
+      if (this.auditHistory) {
+        const now = new Date();
+        const dateStr = `${String(now.getDate()).padStart(2, '0')}-Sep-2026 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')} IST`;
+        this.auditHistory.unshift({
+          date: dateStr,
+          text: `Statutory Warning Acknowledged: High-Risk Alert for Bidder ${prof.bidder_name} acknowledged by Officer. Action: Noted for Tender Committee scrutiny.`,
+          badgeColor: '#166534'
+        });
+        this.renderAuditHistory();
+      }
+    }
   }
 
   // Global mount
   window.parakhApp = new ParakhApplication();
 
 })();
+

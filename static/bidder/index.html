@@ -419,13 +419,18 @@
 
   <!-- Header -->
   <header class="bidder-header">
-    <a href="/bidder" class="bidder-brand">
-      <img src="/static/images/parakh-logo.png" alt="PARAKH AI Logo">
-      <div class="brand-text-block">
-        <h1>PARAKH AI</h1>
-        <p>BIDDER & SUPPLIER COMPLIANCE PORTAL</p>
-      </div>
-    </a>
+    <div style="display:flex; align-items:center; gap:16px;">
+      <button type="button" onclick="if(window.history.length > 1){ window.history.back(); } else { window.location.href='/'; }" style="display:inline-flex; align-items:center; gap:6px; background:#F8FAFC; border:1px solid #CBD5E1; color:#07264A; padding:7px 14px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer; text-decoration:none;" title="Return to previous screen">
+        <span>&larr;</span> <span>Back</span>
+      </button>
+      <a href="/bidder" class="bidder-brand">
+        <img src="/static/images/parakh-logo.png" alt="PARAKH AI Logo">
+        <div class="brand-text-block">
+          <h1>PARAKH AI</h1>
+          <p>BIDDER & SUPPLIER COMPLIANCE PORTAL</p>
+        </div>
+      </a>
+    </div>
 
     <div class="bidder-profile-card">
       <div class="bidder-avatar">AT</div>

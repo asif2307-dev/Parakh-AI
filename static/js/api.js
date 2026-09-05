@@ -229,6 +229,55 @@ const api = {
     const res = await fetch(`${API_BASE}/notifications`);
     if (!res.ok) throw new Error('Failed to load notifications');
     return await res.json();
+  },
+
+  // Integrity & Risk Intelligence (NEW USP)
+  async getBidderIntegrity(bidId) {
+    const res = await fetch(`${API_BASE}/bidders/${bidId}/integrity`);
+    if (!res.ok) throw new Error(`Failed to load integrity profile for ${bidId}`);
+    return await res.json();
+  },
+
+  async getBidderRiskSignals(bidId, filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    const url = `${API_BASE}/bidders/${bidId}/risk-signals${params ? '?' + params : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to load risk signals for ${bidId}`);
+    return await res.json();
+  },
+
+  async triggerRiskAnalysis(bidId) {
+    const res = await fetch(`${API_BASE}/bidders/${bidId}/risk-analysis`, {
+      method: 'POST'
+    });
+    if (!res.ok) throw new Error(`Failed to trigger risk analysis for ${bidId}`);
+    return await res.json();
+  },
+
+  async getBidderEarlyWarnings(bidId) {
+    const res = await fetch(`${API_BASE}/bidders/${bidId}/early-warnings`);
+    if (!res.ok) throw new Error(`Failed to load early warnings for ${bidId}`);
+    return await res.json();
+  },
+
+  async reviewRiskSignal(signalId, reviewData) {
+    const res = await fetch(`${API_BASE}/risk-signals/${signalId}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reviewData)
+    });
+    if (!res.ok) throw new Error(`Failed to submit officer review for signal ${signalId}`);
+    return await res.json();
+  },
+
+  async acknowledgeEarlyWarning(warningId, ackData) {
+    const res = await fetch(`${API_BASE}/early-warnings/${warningId}/acknowledge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ackData)
+    });
+    if (!res.ok) throw new Error(`Failed to acknowledge early warning ${warningId}`);
+    return await res.json();
   }
 };
 

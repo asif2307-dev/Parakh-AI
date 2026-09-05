@@ -6,7 +6,8 @@ from app.database import get_db
 from app.models.db_models import Bid, Document, AuditLog, Tender, Profile, FaceVerification, OrganizationVerification, SmartBidEvaluation, Notification
 from app.models.schemas import (
     OfficerDecisionRequest, LoginRequest, OTPRequest, OTPVerifyRequest, 
-    OnboardingRequest, FaceVerifyRequest, FaceVerifyResponse, OrgVerifyRequest, OrgVerifyResponse
+    OnboardingRequest, FaceVerifyRequest, FaceVerifyResponse, OrgVerifyRequest, OrgVerifyResponse,
+    RiskSignalItem, EarlyWarningItem, IntegrityProfileResponse, RiskSignalReviewRequest, EarlyWarningAcknowledgeRequest
 )
 from app.services.compliance_engine import ComplianceEngine
 from app.services.contradiction_detector import ContradictionDetector
@@ -19,6 +20,7 @@ from app.services.smartbid_engine import SmartBidEngine
 from app.services.expiry_monitor import ExpiryMonitorService
 from app.services.crosscheck_service import CrossCheckService
 from app.services.kyc_service import KYCService
+from app.services.integrity_risk_service import IntegrityRiskService
 from app.data.seed_data import db as mock_db
 import os
 import shutil
@@ -768,5 +770,102 @@ def get_notifications(db: Session = Depends(get_db)):
         "unread_count": sum(1 for n in default_notifications if not n["is_read"]),
         "notifications": default_notifications
     }
+
+# =====================================================================
+# INTEGRITY & RISK INTELLIGENCE (NEW USP)
+# =====================================================================
+
+@router.get("/bidders/{bid_id}/integrity", response_model=IntegrityProfileResponse)
+def get_bidder_integrity_profile(bid_id: str, db: Session = Depends(get_db)):
+    """
+    NEW USP: Integrity & Risk Intelligence Profile.
+    Returns 7-dimension Integrity Score (0-100), Risk Level (LOW, MEDIUM, HIGH),
+    tracked Risk Signals, and active Early Warnings.
+    """
+    profile = IntegrityRiskService.get_integrity_profile(bid_id)
+    return profile
+
+@router.get("/bidders/{bid_id}/risk-signals", response_model=List[RiskSignalItem])
+def get_bidder_risk_signals(
+    bid_id: str,
+    category: Optional[str] = None,
+    severity: Optional[str] = None,
+    status: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Returns structured risk signals for a bidder with source provenance and review status.
+    Supports filtering by category, severity, and legal status.
+    """
+    profile = IntegrityRiskService.get_integrity_profile(bid_id)
+    signals = profile.get("risk_signals", [])
+
+    if category:
+        signals = [s for s in signals if s.get("category") == category]
+    if severity:
+        signals = [s for s in signals if s.get("severity") == severity]
+    if status:
+        signals = [s for s in signals if s.get("status") == status]
+
+    return signals
+
+@router.post("/bidders/{bid_id}/risk-analysis", response_model=IntegrityProfileResponse)
+def trigger_bidder_risk_analysis(bid_id: str, db: Session = Depends(get_db)):
+    """
+    Triggers re-evaluation of authoritative risk registries and returns an updated profile.
+    """
+    profile = IntegrityRiskService.get_integrity_profile(bid_id)
+    AuditService.record_entry(
+        bid_id=bid_id,
+        action_type="INTEGRITY_RISK_REANALYSIS",
+        actor="Procurement Officer",
+        details=f"Re-assessed risk registries for {profile['vendor_name']}. Score: {profile['integrity_score']}/100, Level: {profile['risk_level']}.",
+        status_tag="SUCCESS" if profile["risk_level"] == "LOW" else "ALERT"
+    )
+    return profile
+
+@router.get("/bidders/{bid_id}/early-warnings", response_model=List[EarlyWarningItem])
+def get_bidder_early_warnings(bid_id: str, db: Session = Depends(get_db)):
+    """
+    Returns active high/critical early warning alerts requiring human procurement review.
+    """
+    profile = IntegrityRiskService.get_integrity_profile(bid_id)
+    return profile.get("early_warnings", [])
+
+@router.post("/risk-signals/{signal_id}/review")
+def review_risk_signal_action(signal_id: str, req: RiskSignalReviewRequest, db: Session = Depends(get_db)):
+    """
+    Official Procurement Officer Review of a specific risk signal.
+    Enforces that serious findings can be acknowledged, overridden, or escalated
+    with mandatory human rationale and immutable cryptographic audit logging.
+    """
+    res = IntegrityRiskService.review_risk_signal(
+        signal_id=signal_id,
+        action=req.action,
+        officer_name=req.officer_name,
+        notes=req.review_notes
+    )
+    return res
+
+@router.post("/early-warnings/{warning_id}/acknowledge")
+def acknowledge_early_warning_action(warning_id: str, req: EarlyWarningAcknowledgeRequest, db: Session = Depends(get_db)):
+    """
+    Acknowledges an Early Warning alert and records compliance officer sign-off.
+    """
+    AuditService.record_entry(
+        bid_id=warning_id,
+        action_type="EARLY_WARNING_ACKNOWLEDGED",
+        actor=req.officer_name,
+        details=f"Early warning {warning_id} formally acknowledged by {req.officer_name}. Notes: {req.acknowledgment_notes or 'Standard acknowledgment'}",
+        status_tag="SUCCESS"
+    )
+    return {
+        "success": True,
+        "warning_id": warning_id,
+        "acknowledged_by": req.officer_name,
+        "status": "ACKNOWLEDGED",
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S IST")
+    }
+
 
 

@@ -155,3 +155,61 @@ class Notification(Base):
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class RiskAssessment(Base):
+    __tablename__ = "risk_assessments"
+    id = Column(String, primary_key=True, index=True)
+    bidder_id = Column(String, index=True)
+    bid_id = Column(String, nullable=True, index=True)
+    vendor_name = Column(String)
+    integrity_score = Column(Float, default=100.0)
+    risk_level = Column(String, default="LOW") # LOW, MEDIUM, HIGH
+    debarment_status = Column(String, default="NO_RECORD_FOUND") # NO_RECORD_FOUND, CLEARED, HISTORICAL_RESOLVED, ACTIVE_DEBARRED, DATA_UNAVAILABLE
+    violations_count = Column(Integer, default=0)
+    litigation_status = Column(String, default="NONE") # NONE, PENDING_DISPUTE, ADJUDICATED, UNKNOWN
+    performance_rating = Column(Float, default=90.0)
+    early_warnings_count = Column(Integer, default=0)
+    scoring_breakdown_json = Column(JSON, nullable=True)
+    audit_signature = Column(String, nullable=True)
+    evaluated_at = Column(DateTime, default=datetime.utcnow)
+
+class RiskSignal(Base):
+    __tablename__ = "risk_signals"
+    id = Column(String, primary_key=True, index=True)
+    bidder_id = Column(String, index=True)
+    bid_id = Column(String, nullable=True, index=True)
+    category = Column(String) # BLACKLISTING, DEBARMENT, CONTRACT_VIOLATION, FRAUD, CORRUPTION, TENDER_DEFAULT, LITIGATION, PERFORMANCE, REGULATORY, DOCUMENTATION, OTHER
+    severity = Column(String, default="LOW") # INFO, LOW, MEDIUM, HIGH, CRITICAL
+    title = Column(String)
+    description = Column(Text)
+    status = Column(String, default="UNKNOWN") # ALLEGATION, PENDING, UNDER_INVESTIGATION, ADJUDICATED, PROVEN_VIOLATION, CLEARED, UNKNOWN
+    source = Column(String)
+    source_type = Column(String, default="VERIFIED") # AUTHORITATIVE, VERIFIED, SECONDARY, UNVERIFIED, UNKNOWN
+    source_reference = Column(String)
+    evidence = Column(Text)
+    record_date = Column(String)
+    retrieved_at = Column(String)
+    confidence = Column(String, default="HIGH") # HIGH, MEDIUM, LOW
+    is_authoritative = Column(Boolean, default=True)
+    review_status = Column(String, default="PENDING_REVIEW") # PENDING_REVIEW, REVIEWED, ACKNOWLEDGED, OVERRIDDEN, DISMISSED
+    review_notes = Column(Text, nullable=True)
+    reviewed_by = Column(String, nullable=True)
+    reviewed_at = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class EarlyWarning(Base):
+    __tablename__ = "early_warnings"
+    id = Column(String, primary_key=True, index=True)
+    bidder_id = Column(String, index=True)
+    bid_id = Column(String, nullable=True, index=True)
+    risk_signal_id = Column(String, nullable=True, index=True)
+    severity = Column(String, default="HIGH") # MEDIUM, HIGH, CRITICAL
+    title = Column(String)
+    risk_summary = Column(Text)
+    source_authority = Column(String)
+    evidence_reference = Column(String)
+    recommended_action = Column(Text)
+    is_acknowledged = Column(Boolean, default=False)
+    acknowledged_by = Column(String, nullable=True)
+    acknowledged_at = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+

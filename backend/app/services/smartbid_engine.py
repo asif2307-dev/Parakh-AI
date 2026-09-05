@@ -235,6 +235,20 @@ class SmartBidEngine:
                 "evidence": "Contradiction Engine & Audit Findings"
             })
 
+        # Fetch holistic Integrity & Risk Intelligence profile
+        from app.services.integrity_risk_service import IntegrityRiskService
+        integrity_profile = IntegrityRiskService.get_integrity_profile(bid_id)
+        integrity_score = integrity_profile.get("integrity_score", 85.0)
+
+        factors.append({
+            "factor": "Integrity & Governance Profile",
+            "raw_score": f"{integrity_score}/100",
+            "weight_pct": 15,
+            "contribution": round((integrity_score / 100.0) * 15.0, 1),
+            "reason": f"Evaluated across debarment registers, contract terminations, and litigation history. Classification: {integrity_profile['risk_level']} Risk.",
+            "evidence": f"CVC Gazette, GeM Incident Register, e-Courts ({len(integrity_profile.get('risk_signals', []))} signals tracked)"
+        })
+
         return {
             "bid_id": bid_id,
             "vendor_name": profile["vendor_name"],
@@ -246,6 +260,7 @@ class SmartBidEngine:
             "quality_score": round(s_qual, 1),
             "financial_score": round(s_fin, 1),
             "price_score": round(s_price, 1),
+            "integrity_score": round(integrity_score, 1),
             "risk_deduction": round(risk_deduction, 1),
             "debarment_status": reg_standing,
             "factor_breakdown": factors
@@ -254,7 +269,7 @@ class SmartBidEngine:
     @classmethod
     def compare_bids_multiperspective(cls, bids_data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
-        Ranks multiple bids across 6 distinct procurement perspectives.
+        Ranks multiple bids across 8 distinct procurement perspectives.
         Demonstrates that Lowest Price (L1) is NOT automatically the best bidder.
         """
         evaluated_bids = []
@@ -267,18 +282,22 @@ class SmartBidEngine:
             )
             evaluated_bids.append(eval_res)
 
-        # Sort by Overall Score
+        # 1. Sort by Overall Score
         overall_ranked = sorted(evaluated_bids, key=lambda x: x["overall_smartbid_score"], reverse=True)
-        # Sort by Value for Money (Balanced quality, compliance, and reasonable price)
+        # 2. Sort by Value for Money (Balanced quality, compliance, and reasonable price)
         vfm_ranked = sorted(evaluated_bids, key=lambda x: (x["compliance_score"] * 0.35 + x["performance_score"] * 0.35 + x["price_score"] * 0.30 - x["risk_deduction"]), reverse=True)
-        # Sort by Experience
+        # 3. Sort by Experience
         exp_ranked = sorted(evaluated_bids, key=lambda x: x["experience_score"], reverse=True)
-        # Sort by Performance
+        # 4. Sort by Performance
         perf_ranked = sorted(evaluated_bids, key=lambda x: x["performance_score"], reverse=True)
-        # Sort by Compliance
+        # 5. Sort by Compliance
         comp_ranked = sorted(evaluated_bids, key=lambda x: x["compliance_score"], reverse=True)
-        # Sort by Lowest Risk
+        # 6. Sort by Lowest Risk
         risk_ranked = sorted(evaluated_bids, key=lambda x: x["risk_deduction"])
+        # 7. Sort by Integrity & Governance
+        integrity_ranked = sorted(evaluated_bids, key=lambda x: x.get("integrity_score", 100.0), reverse=True)
+        # 8. Sort by Risk-Adjusted Value (Price + Compliance + Performance + Integrity - Risk)
+        risk_adj_vfm_ranked = sorted(evaluated_bids, key=lambda x: (x["compliance_score"] * 0.25 + x["performance_score"] * 0.25 + x.get("integrity_score", 100.0) * 0.25 + x["price_score"] * 0.25 - x["risk_deduction"]), reverse=True)
 
         # Map ranks back to each bid
         for b in evaluated_bids:
@@ -289,11 +308,13 @@ class SmartBidEngine:
                 "performance": [x["bid_id"] for x in perf_ranked].index(b["bid_id"]) + 1,
                 "compliance": [x["bid_id"] for x in comp_ranked].index(b["bid_id"]) + 1,
                 "risk": [x["bid_id"] for x in risk_ranked].index(b["bid_id"]) + 1,
+                "integrity": [x["bid_id"] for x in integrity_ranked].index(b["bid_id"]) + 1,
+                "risk_adjusted_vfm": [x["bid_id"] for x in risk_adj_vfm_ranked].index(b["bid_id"]) + 1,
             }
             b["value_for_money_rank"] = b["perspective_ranks"]["value_for_money"]
 
         # Formulate Human-Centric Decision Support Recommendation (NOT an autonomous award)
-        best_vfm = vfm_ranked[0] if vfm_ranked else evaluated_bids[0]
+        best_vfm = risk_adj_vfm_ranked[0] if risk_adj_vfm_ranked else evaluated_bids[0]
         lowest_price_bid = min(evaluated_bids, key=lambda x: x["quoted_price"]) if evaluated_bids else None
 
         recommendation = {
@@ -305,9 +326,9 @@ class SmartBidEngine:
             "lowest_price_vendor": lowest_price_bid["vendor_name"] if lowest_price_bid else "",
             "lowest_price_bid_id": lowest_price_bid["bid_id"] if lowest_price_bid else "",
             "key_rationale": [
-                f"{best_vfm['vendor_name']} demonstrates superior overall Value-for-Money (SmartBid Score: {best_vfm['overall_smartbid_score']}/100) despite not being the lowest raw bid.",
-                f"Lowest raw bidder ({lowest_price_bid['vendor_name'] if lowest_price_bid else 'L1'}) has {lowest_price_bid['risk_deduction'] if lowest_price_bid else 0} risk penalty points and compliance vulnerabilities.",
-                f"Statutory compliance ({best_vfm['compliance_score']}%) and on-field track record ({best_vfm['performance_score']}/100) significantly reduce project delivery failure risks."
+                f"{best_vfm['vendor_name']} demonstrates superior overall Risk-Adjusted Value (SmartBid Score: {best_vfm['overall_smartbid_score']}/100, Integrity Score: {best_vfm.get('integrity_score', 90)}/100) despite not being the lowest raw bid.",
+                f"Lowest raw bidder ({lowest_price_bid['vendor_name'] if lowest_price_bid else 'L1'}) has {lowest_price_bid['risk_deduction'] if lowest_price_bid else 0} risk penalty points and serious governance vulnerabilities.",
+                f"Statutory compliance ({best_vfm['compliance_score']}%), on-field track record ({best_vfm['performance_score']}/100), and clean debarment standing protect the public procurement authority from costly litigation and abandonment."
             ]
         }
 
@@ -323,6 +344,8 @@ class SmartBidEngine:
                 {"id": "experience", "label": "Experience Priority", "description": "Prioritizes historical sector scale, project volume, and domain expertise."},
                 {"id": "performance", "label": "On-Field Performance Priority", "description": "Prioritizes zero defect rates, delivery punctuality, and verified buyer feedback."},
                 {"id": "compliance", "label": "Compliance Priority", "description": "Prioritizes strict adherence to mandatory technical and statutory clauses."},
-                {"id": "risk", "label": "Overall Risk Priority", "description": "Prioritizes lowest risk exposure and zero registry contradictions."}
+                {"id": "risk", "label": "Overall Risk Priority", "description": "Prioritizes lowest risk exposure and zero registry contradictions."},
+                {"id": "integrity", "label": "Integrity Priority", "description": "Prioritizes clean debarment, litigation, and regulatory governance records."},
+                {"id": "risk_adjusted_vfm", "label": "Risk-Adjusted Value Priority", "description": "Balances cost and quality against integrity risk, ensuring lowest raw price never overrides governance flags."}
             ]
         }

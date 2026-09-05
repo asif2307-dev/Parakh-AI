@@ -172,13 +172,18 @@
 
       <!-- Breadcrumbs -->
       <nav class="breadcrumb-bar" id="breadcrumbBar" aria-label="Breadcrumb">
-        <ul class="breadcrumb-list">
-          <li><a href="javascript:void(0)" onclick="parakhApp.switchView('home')">Home</a></li>
-          <li class="breadcrumb-separator">/</li>
-          <li id="breadcrumbParent"><a href="javascript:void(0)">PARAKH AI</a></li>
-          <li class="breadcrumb-separator">/</li>
-          <li class="breadcrumb-current" id="breadcrumbCurrent">Institutional Home Overview</li>
-        </ul>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btnBreadcrumbBack" onclick="parakhApp.goBack()" style="padding:4px 10px; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:5px; border-radius:4px; border:1px solid #CBD5E1; background:#FFFFFF; cursor:pointer;" title="Return to previous screen">
+            <span>&larr;</span> <span>Back</span>
+          </button>
+          <ul class="breadcrumb-list">
+            <li><a href="javascript:void(0)" onclick="parakhApp.switchView('home')">Home</a></li>
+            <li class="breadcrumb-separator">/</li>
+            <li id="breadcrumbParent"><a href="javascript:void(0)">PARAKH AI</a></li>
+            <li class="breadcrumb-separator">/</li>
+            <li class="breadcrumb-current" id="breadcrumbCurrent">Institutional Home Overview</li>
+          </ul>
+        </div>
         <span class="breadcrumb-timestamp" id="breadcrumbTime">Refreshed: Just now</span>
       </nav>
 
@@ -379,6 +384,9 @@
             <p>Complete multi-source statutory repository of pipeline SCADA readings, refinery dispatch ledgers, and subsidized fuel allocations.</p>
           </div>
           <div class="page-actions-group">
+            <button class="btn btn-secondary btn-sm" onclick="parakhApp.goBack()">
+              <span>&larr; Back</span>
+            </button>
             <button class="btn btn-accent btn-sm" onclick="parakhApp.switchView('upload')">
               <span>+ Ingest Telemetry Batch</span>
             </button>
@@ -484,6 +492,11 @@
           <div class="page-title-group">
             <h1>Statutory Telemetry & Manifest Ingestion</h1>
             <p>Upload telemetry dumps, laboratory quality certificates, or distribution ledgers for deterministic validation and checksum verification.</p>
+          </div>
+          <div class="page-actions-group">
+            <button class="btn btn-secondary btn-sm" onclick="parakhApp.goBack()">
+              <span>&larr; Back</span>
+            </button>
           </div>
         </div>
 
@@ -611,6 +624,11 @@
             <h1>AI Compliance Scrutiny</h1>
             <p>Automated bid parsing and multi-stage compliance verification against GeM procurement rules.</p>
           </div>
+          <div class="page-actions-group">
+            <button class="btn btn-secondary btn-sm" onclick="parakhApp.goBack()">
+              <span>&larr; Back</span>
+            </button>
+          </div>
         </div>
 
         <div class="panel" style="margin-bottom:14px;">
@@ -713,6 +731,9 @@
             <p>Direct API integrations with MCA21, GSTN, and Udyam portals to cryptographically verify claims and monitor document expiry.</p>
           </div>
           <div class="page-actions-group">
+            <button class="btn btn-secondary btn-sm" onclick="parakhApp.goBack()">
+              <span>&larr; Back</span>
+            </button>
             <button class="btn btn-accent btn-sm" onclick="alert('Initiating real-time API sync...')">Sync with GSTN/MCA21</button>
           </div>
         </div>
@@ -797,6 +818,9 @@
             <p>Statutory 60-day threshold surveillance for bidder certifications, licenses, and registrations.</p>
           </div>
           <div class="page-actions-group">
+            <button class="btn btn-secondary btn-sm" onclick="parakhApp.goBack()">
+              <span>&larr; Back</span>
+            </button>
             <button class="btn btn-secondary btn-sm" onclick="parakhApp.filterExpiryDocs('ALL')">All (8)</button>
             <button class="btn btn-secondary btn-sm" onclick="parakhApp.filterExpiryDocs('VALID')">Valid (4)</button>
             <button class="btn btn-secondary btn-sm" onclick="parakhApp.filterExpiryDocs('EXPIRING_SOON')">Expiring Soon (2)</button>
@@ -907,7 +931,10 @@
             <h1>SmartBid Multi-Dimensional Evaluation Engine</h1>
             <p>Beyond L1 lowest-price bias: holistic scoring across technical compliance, financial capacity, experience relevance, past performance, and authoritative risk standing.</p>
           </div>
-          <div class="page-actions-group">
+          <div class="page-actions-group" style="display:flex; gap:10px; align-items:center;">
+            <button class="btn btn-secondary btn-sm" onclick="parakhApp.goBack()">
+              <span>&larr; Back</span>
+            </button>
             <select id="smartbidTenderSelect" style="background:#fff; border:1px solid #CBD5E1; padding:6px 12px; font-weight:600; font-size:12px; border-radius:4px;" onchange="parakhApp.onSmartBidTenderChange(this.value)">
               <option value="4929">Tender #4929: High-Pressure SCADA & Valve Control Grid (₹12.5 Cr)</option>
               <option value="5011">Tender #5011: National Gas Metering & Telemetry Expansion (₹45.0 Cr)</option>
@@ -915,7 +942,7 @@
           </div>
         </div>
 
-        <!-- 6 Decision Perspective Tabs -->
+        <!-- 8 Decision Perspective Tabs -->
         <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; border-bottom:2px solid #E2E8F0; padding-bottom:8px;">
           <button type="button" class="btn btn-sm smartbid-persp-btn active" id="btn-persp-overall" onclick="parakhApp.setSmartBidPerspective('overall')">Overall Balanced</button>
           <button type="button" class="btn btn-sm smartbid-persp-btn" id="btn-persp-vfm" onclick="parakhApp.setSmartBidPerspective('vfm')">Value-for-Money Priority</button>
@@ -923,6 +950,8 @@
           <button type="button" class="btn btn-sm smartbid-persp-btn" id="btn-persp-performance" onclick="parakhApp.setSmartBidPerspective('performance')">On-Field Performance Priority</button>
           <button type="button" class="btn btn-sm smartbid-persp-btn" id="btn-persp-compliance" onclick="parakhApp.setSmartBidPerspective('compliance')">Compliance & Statutory Priority</button>
           <button type="button" class="btn btn-sm smartbid-persp-btn" id="btn-persp-risk" onclick="parakhApp.setSmartBidPerspective('risk')">Risk & Governance Priority</button>
+          <button type="button" class="btn btn-sm smartbid-persp-btn" id="btn-persp-integrity" onclick="parakhApp.setSmartBidPerspective('integrity')">Integrity Priority</button>
+          <button type="button" class="btn btn-sm smartbid-persp-btn" id="btn-persp-risk_adjusted_vfm" onclick="parakhApp.setSmartBidPerspective('risk_adjusted_vfm')">Risk-Adjusted Value</button>
         </div>
 
         <!-- Value for Money Decision Recommendation Banner -->
@@ -1049,6 +1078,9 @@
             <p>Generate verifiable, cryptographic compliance reports for procurement audits and stakeholder reviews.</p>
           </div>
           <div class="page-actions-group">
+            <button class="btn btn-secondary btn-sm" onclick="parakhApp.goBack()">
+              <span>&larr; Back</span>
+            </button>
             <button class="btn btn-primary btn-sm" onclick="parakhApp.openGenerateReportModal()">
               <span class="btn-icon">📄</span>
               <span>Generate New Report</span>
@@ -1102,6 +1134,9 @@
             <p>Threshold violations, telemetry gaps, and suspected allocation divergences requiring formal officer acknowledgment and action.</p>
           </div>
           <div class="page-actions-group">
+            <button class="btn btn-secondary btn-sm" onclick="parakhApp.goBack()">
+              <span>&larr; Back</span>
+            </button>
             <button class="btn btn-secondary btn-sm" onclick="parakhApp.filterAlerts('ALL')">All Alerts (9)</button>
             <button class="btn btn-secondary btn-sm" onclick="parakhApp.filterAlerts('CRITICAL')">Critical (3)</button>
             <button class="btn btn-secondary btn-sm" onclick="parakhApp.filterAlerts('HIGH')">High (4)</button>
@@ -1123,6 +1158,11 @@
           <div class="page-title-group">
             <h1>Audit Trail (Immutable)</h1>
             <p>Cryptographically secure log of all system interactions, compliance verifications, and manual overrides.</p>
+          </div>
+          <div class="page-actions-group">
+            <button class="btn btn-secondary btn-sm" onclick="parakhApp.goBack()">
+              <span>&larr; Back</span>
+            </button>
           </div>
         </div>
 
@@ -1160,6 +1200,11 @@
           <div class="page-title-group">
             <h1>Portal Settings & Regulatory Parameters</h1>
             <p>Calibrate GeM threshold tolerances, statutory boundary limits, and notification dispatch rules.</p>
+          </div>
+          <div class="page-actions-group">
+            <button class="btn btn-secondary btn-sm" onclick="parakhApp.goBack()">
+              <span>&larr; Back</span>
+            </button>
           </div>
         </div>
 
@@ -1226,51 +1271,193 @@
       <!-- ===================================================================
            VIEW 10: ADMINISTRATION
            =================================================================== -->
-            <section class="view-section" id="view-risk" style="display:none;">
+      <!-- ===================================================================
+           VIEW 10: INTEGRITY & RISK INTELLIGENCE (NEW CORE USP)
+           =================================================================== -->
+      <section class="view-section" id="view-risk" style="display:none;">
         <div class="page-title-banner">
           <div class="page-title-group">
-            <h1>Risk Analysis & Scoring</h1>
-            <p>Predictive risk scoring and cartelization detection based on historical bidding patterns and entity relationships.</p>
+            <h1>Integrity & Risk Intelligence</h1>
+            <p>Comprehensive credibility, legal, and past contract scrutiny across official debarment registers, contract terminations, and SLA delivery records.</p>
+          </div>
+          <div class="page-actions-group" style="display:flex; gap:10px; align-items:center;">
+            <button class="btn btn-secondary btn-sm" onclick="parakhApp.goBack()">
+              <span>&larr; Back</span>
+            </button>
+            <select id="integrityBidderSelect" style="background:#fff; border:1px solid #CBD5E1; padding:6px 12px; font-weight:600; font-size:12px; border-radius:4px;" onchange="parakhApp.onIntegrityBidderChange(this.value)">
+              <option value="BID-2026-002">XYZ Infra Solutions (Clean / Low Risk)</option>
+              <option value="BID-2026-004">Kirloskar Dynamics Ltd. (High Integrity)</option>
+              <option value="BID-2026-003">Bharat Industrial Systems (Medium Risk / Review Required)</option>
+              <option value="BID-2026-005">CyberTech Solutions LLP (High Risk / Early Warning)</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="parakhApp.reanalyzeIntegrity()">Re-Query Registries</button>
           </div>
         </div>
-        <div class="panel">
-          <div class="panel-header">
-            <span>BIDDER RISK PROFILES</span>
+
+        <!-- Top KPI Scorecards -->
+        <div class="kpi-grid">
+          <div class="kpi-card" style="border-top:3px solid var(--parakh-navy);">
+            <span class="kpi-label">Integrity & Risk Score</span>
+            <span class="kpi-value" id="riskIntegrityScore" style="color:var(--parakh-navy);">94.0 / 100</span>
+            <span class="kpi-subtext" style="color:var(--parakh-teal);" id="riskIntegritySubtitle">Safe statutory standing</span>
           </div>
-          <div class="panel-body">
-            <table class="data-table">
+          <div class="kpi-card" id="riskLevelCard" style="border-top:3px solid #166534;">
+            <span class="kpi-label">Risk Classification</span>
+            <span class="kpi-value" id="riskLevelBadge" style="color:#166534; font-size:20px;">LOW RISK</span>
+            <span class="kpi-subtext" id="riskLevelDesc">Decision Support Advisory</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">Debarment Status</span>
+            <span class="kpi-value" id="riskDebarmentStatus" style="font-size:16px; color:#166534;">NO RECORD FOUND</span>
+            <span class="kpi-subtext">CVC & GeM Gazette Verified</span>
+          </div>
+          <div class="kpi-card kpi-accent" id="riskEarlyWarningCard">
+            <span class="kpi-label">Active Early Warnings</span>
+            <span class="kpi-value" id="riskEarlyWarningsCount" style="color:#1E40AF;">0</span>
+            <span class="kpi-subtext" id="riskEarlyWarningsDesc">Zero critical signals</span>
+          </div>
+        </div>
+
+        <!-- Early Warning Alert Banner (Dynamically displayed when High/Critical signals exist) -->
+        <div id="riskEarlyWarningAlertBox" style="display:none; background:#FEF2F2; border-left:5px solid #DC2626; border-top:1px solid #FECACA; border-right:1px solid #FECACA; border-bottom:1px solid #FECACA; border-radius:4px; padding:16px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+            <div style="flex:1; min-width:280px;">
+              <div style="font-size:11px; font-weight:800; color:#DC2626; text-transform:uppercase; letter-spacing:0.5px;">HIGH-RISK EARLY WARNING (MANDATORY OFFICER REVIEW)</div>
+              <h3 style="color:#991B1B; margin:4px 0 6px 0; font-size:16px;" id="earlyWarningTitle">Contract Termination for Cause Identified</h3>
+              <p style="margin:0; font-size:13px; color:#450A0A; line-height:1.5;" id="earlyWarningSummary">
+                Official GeM Default Contractor record indicates Contract GEM-2024-C-9901 was terminated for cause due to abandonment of work.
+              </p>
+              <div style="margin-top:8px; font-size:12px; color:#7F1D1D;">
+                <strong>Recommended Procurement Action:</strong> Inspect official order and verify whether statutory cure period has lapsed before tender committee evaluation.
+              </div>
+            </div>
+            <div style="text-align:right; min-width:140px;">
+              <span class="badge badge-error" style="font-size:12px; padding:6px 12px;">Immediate Action Required</span>
+              <button class="btn btn-secondary btn-sm" style="margin-top:8px; width:100%; border-color:#DC2626; color:#991B1B;" onclick="parakhApp.acknowledgeCurrentWarning()">Acknowledge Warning</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6 Risk Dimensions Summary Grid -->
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>7-DIMENSION INTEGRITY & GOVERNANCE SUMMARY</span>
+            <span style="font-size:11px; font-weight:normal; color:#64748B;">Guards against "Lowest Price = Best Bidder" distortion</span>
+          </div>
+          <div class="panel-body" style="padding:14px;">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px;">
+              <div style="background:#F8FAFC; border:1px solid #E2E8F0; padding:12px; border-radius:4px;">
+                <div style="font-size:11px; color:#64748B; font-weight:bold;">DEBARMENT STANDING (25%)</div>
+                <div style="font-size:16px; font-weight:bold; color:#166534; margin:4px 0;" id="dimScoreDebarment">25.0 / 25</div>
+                <div style="font-size:11px; color:#475569;" id="dimStatusDebarment">No record found in CVC</div>
+              </div>
+              <div style="background:#F8FAFC; border:1px solid #E2E8F0; padding:12px; border-radius:4px;">
+                <div style="font-size:11px; color:#64748B; font-weight:bold;">CONTRACT COMPLIANCE (20%)</div>
+                <div style="font-size:16px; font-weight:bold; color:#166534; margin:4px 0;" id="dimScoreCompliance">20.0 / 20</div>
+                <div style="font-size:11px; color:#475569;" id="dimStatusCompliance">0 violations on record</div>
+              </div>
+              <div style="background:#F8FAFC; border:1px solid #E2E8F0; padding:12px; border-radius:4px;">
+                <div style="font-size:11px; color:#64748B; font-weight:bold;">ON-FIELD DELIVERY SLA (20%)</div>
+                <div style="font-size:16px; font-weight:bold; color:#166534; margin:4px 0;" id="dimScorePerformance">19.2 / 20</div>
+                <div style="font-size:11px; color:#475569;" id="dimStatusPerformance">96.0% verified SLA rate</div>
+              </div>
+              <div style="background:#F8FAFC; border:1px solid #E2E8F0; padding:12px; border-radius:4px;">
+                <div style="font-size:11px; color:#64748B; font-weight:bold;">TENDER DEFAULTS (15%)</div>
+                <div style="font-size:16px; font-weight:bold; color:#166534; margin:4px 0;" id="dimScoreDefault">15.0 / 15</div>
+                <div style="font-size:11px; color:#475569;" id="dimStatusDefault">0 defaults recorded</div>
+              </div>
+              <div style="background:#F8FAFC; border:1px solid #E2E8F0; padding:12px; border-radius:4px;">
+                <div style="font-size:11px; color:#64748B; font-weight:bold;">REGULATORY STANDING (10%)</div>
+                <div style="font-size:16px; font-weight:bold; color:#166534; margin:4px 0;" id="dimScoreRegulatory">10.0 / 10</div>
+                <div style="font-size:11px; color:#475569;" id="dimStatusRegulatory">All clearances active</div>
+              </div>
+              <div style="background:#F8FAFC; border:1px solid #E2E8F0; padding:12px; border-radius:4px;">
+                <div style="font-size:11px; color:#64748B; font-weight:bold;">LITIGATION / LEGAL (10%)</div>
+                <div style="font-size:16px; font-weight:bold; color:#166534; margin:4px 0;" id="dimScoreLegal">10.0 / 10</div>
+                <div style="font-size:11px; color:#475569;" id="dimStatusLegal">Allegation != Guilt</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Risk Signals Table with Provenance & Action -->
+        <div class="panel">
+          <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>EVIDENCE-BACKED RISK SIGNALS REGISTRY</span>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-secondary btn-sm" onclick="parakhApp.filterSignals('ALL')">All</button>
+              <button class="btn btn-secondary btn-sm" onclick="parakhApp.filterSignals('CRITICAL')">Critical</button>
+              <button class="btn btn-secondary btn-sm" onclick="parakhApp.filterSignals('HIGH')">High</button>
+              <button class="btn btn-secondary btn-sm" onclick="parakhApp.filterSignals('MEDIUM')">Medium</button>
+            </div>
+          </div>
+          <div class="panel-body" style="padding:0; overflow-x:auto;">
+            <table class="data-table" id="riskSignalsTable">
               <thead>
                 <tr>
-                  <th>Bidder Name</th>
-                  <th>Risk Score</th>
-                  <th>Key Risk Factors</th>
-                  <th>Action Recommendation</th>
+                  <th style="width:12%;">Category</th>
+                  <th style="width:10%;">Severity</th>
+                  <th style="width:25%;">Risk Signal Title & Details</th>
+                  <th style="width:12%;">Legal Status</th>
+                  <th style="width:18%;">Authoritative Source & Provenance</th>
+                  <th style="width:11%;">Review State</th>
+                  <th style="width:12%;">Action</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td>Bidder A (Tech Solutions)</td>
-                  <td><span class="badge badge-error">High (85/100)</span></td>
-                  <td>Financial Mismatch, Shared IP with Bidder B</td>
-                  <td>Disqualify / Manual Audit</td>
-                </tr>
-                <tr>
-                  <td>Bidder B (Infra Corp)</td>
-                  <td><span class="badge badge-warning">Medium (55/100)</span></td>
-                  <td>Recent contract delays, Shared IP</td>
-                  <td>Monitor Execution closely</td>
-                </tr>
-                <tr>
-                  <td>Bidder C (Global Systems)</td>
-                  <td><span class="badge badge-success">Low (15/100)</span></td>
-                  <td>None detected</td>
-                  <td>Proceed with evaluation</td>
-                </tr>
+              <tbody id="riskSignalsTableBody">
+                <!-- Dynamically populated by parakhApp.renderIntegrityRiskView() -->
               </tbody>
             </table>
           </div>
         </div>
       </section>
+
+      <!-- Officer Risk Signal Review Modal -->
+      <div id="riskReviewModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7,38,74,0.65); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#fff; border-radius:6px; width:90%; max-width:650px; box-shadow:0 12px 36px rgba(0,0,0,0.35); border:1px solid #CBD5E1; overflow:hidden;">
+          <div style="background:var(--parakh-navy); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <span style="font-size:11px; text-transform:uppercase; color:var(--parakh-teal); font-weight:bold; letter-spacing:0.5px;">Statutory Human Oversight Protocol</span>
+              <h3 style="margin:2px 0 0 0; font-size:16px; color:#fff;">Officer Risk Signal Determination</h3>
+            </div>
+            <button type="button" onclick="parakhApp.closeRiskReviewModal()" style="background:none; border:none; color:#fff; font-size:22px; cursor:pointer;">&times;</button>
+          </div>
+          <div style="padding:20px;">
+            <input type="hidden" id="modalSignalId">
+            <div style="margin-bottom:12px;">
+              <strong style="color:var(--parakh-navy); font-size:14px;" id="modalSignalTitle">Risk Signal Title</strong>
+              <div style="font-size:12px; color:#475569; margin-top:4px;" id="modalSignalDesc">Signal detailed description.</div>
+            </div>
+            <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:4px; padding:10px; margin-bottom:16px; font-size:12px;">
+              <div><strong>Authoritative Source:</strong> <span id="modalSignalSource">Source Name</span></div>
+              <div style="margin-top:4px;"><strong>Cited Evidence:</strong> <span id="modalSignalEvidence">Evidence Ref</span></div>
+            </div>
+
+            <div style="margin-bottom:14px;">
+              <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px; color:var(--parakh-navy);">Official Determination Action:</label>
+              <select id="modalReviewAction" class="form-control" style="width:100%; font-size:12px; padding:6px;">
+                <option value="REVIEWED">REVIEWED — Verified finding; retain on record</option>
+                <option value="ACKNOWLEDGED">ACKNOWLEDGED — Noted for tender committee scrutiny</option>
+                <option value="OVERRIDDEN">OVERRIDDEN — Official exception granted with justification</option>
+                <option value="DISMISSED">DISMISSED — Deemed non-material / unverified allegation</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom:16px;">
+              <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px; color:var(--parakh-navy);">Mandatory Officer Rationale & Statutory Notes:</label>
+              <textarea id="modalReviewNotes" rows="3" class="form-control" style="width:100%; font-size:12px; padding:6px;" placeholder="Document your formal evaluation, relevant tender clauses, or reasons for override..."></textarea>
+            </div>
+
+            <div style="padding:10px; background:#EFF6FF; border-radius:4px; border:1px solid #BFDBFE; font-size:11px; color:#1E40AF;">
+              <strong>Audit Integrity Notice:</strong> All officer determination actions are cryptographically signed (SHA-256) and permanently archived in the immutable procurement audit ledger.
+            </div>
+          </div>
+          <div style="background:#F8FAFC; border-top:1px solid #E2E8F0; padding:12px 20px; text-align:right; display:flex; justify-content:flex-end; gap:8px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="parakhApp.closeRiskReviewModal()">Cancel</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="parakhApp.submitRiskReviewAction()">Submit Official Determination</button>
+          </div>
+        </div>
+      </div>
 
     </main>
   </div>
@@ -1553,6 +1740,7 @@
   </footer>
 
   <!-- Application Logic -->
+  <script src="/static/js/api.js"></script>
   <script src="/static/js/app.js"></script>
 </body>
 </html>

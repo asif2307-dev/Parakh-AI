@@ -1,4 +1,5 @@
-from app.database import engine
+from app.database import engine, Base
+import app.models.db_models
 from sqlalchemy import text
 
 tables = [
@@ -12,10 +13,15 @@ tables = [
     'face_verifications',
     'organization_verifications',
     'smartbid_evaluations',
-    'notifications'
+    'notifications',
+    'risk_assessments',
+    'risk_signals',
+    'early_warnings'
 ]
 
 def main():
+    print("Ensuring all database tables exist in Supabase...")
+    Base.metadata.create_all(bind=engine)
     print("Connecting to Supabase PostgreSQL...")
     with engine.begin() as conn:
         for t in tables:
