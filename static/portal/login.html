@@ -843,56 +843,75 @@
 
     <!-- 3. Face Verification Modal (Replaces Aadhaar, Sections 17-23) -->
     <div class="kyc-modal-backdrop" id="faceKycModal">
-        <div class="kyc-modal-card">
+        <div class="kyc-modal-card" style="max-width:440px;">
             <div class="kyc-modal-header">
                 <div>
                     <h3 style="font-size:1.1rem; margin:0;">Identity Verification — Face Match</h3>
-                    <p style="font-size:11.5px; color:#94A3B8; margin:2px 0 0;">Strict Biometric Verification Replacing Aadhaar</p>
+                    <p style="font-size:11.5px; color:#94A3B8; margin:2px 0 0;">Strict Biometric Verification (Authorized Enrolled Profiles Only)</p>
                 </div>
                 <button type="button" onclick="closeFaceKycModal()" style="background:none; border:none; color:#FFFFFF; cursor:pointer; font-size:1.2rem;">&times;</button>
             </div>
             <div class="kyc-modal-body">
-                <div class="webcam-viewport" id="webcamViewport">
+                <div style="margin-bottom:10px; padding:6px 10px; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; font-size:11px; color:#1E40AF; display:flex; align-items:center; gap:6px;">
+                    <span>🛡️</span>
+                    <span><strong>Authorized Access:</strong> Portal unlocks strictly for <strong>face validation.jpg</strong> &amp; <strong>fv 2.jpeg</strong> profiles.</span>
+                </div>
+
+                <div class="webcam-viewport" id="webcamViewport" style="position:relative; height:240px; background:#0B1329; border-radius:8px; overflow:hidden; display:flex; justify-content:center; align-items:center;">
                     <video id="webcamVideo" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; display:none;"></video>
-                    <canvas id="faceCanvas" width="320" height="240" style="display:none;"></canvas>
+                    <canvas id="faceCanvas" width="320" height="240" style="display:none; width:100%; height:100%; object-fit:cover;"></canvas>
                     
                     <!-- Oval Face Positioning Guide -->
-                    <div class="face-oval-guide"></div>
+                    <div class="face-oval-guide" id="faceOvalGuide"></div>
 
-                    <div id="cameraStandby" style="color:#94A3B8; text-align:center; z-index:2;">
+                    <div id="cameraStandby" style="color:#94A3B8; text-align:center; z-index:2; padding:16px;">
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#009291" stroke-width="1.8" style="margin:0 auto 8px; display:block;">
                             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                             <circle cx="12" cy="13" r="4"/>
                         </svg>
-                        <span style="font-size:12.5px; font-weight:600; color:#F1F5F9;">Camera Ready</span><br>
-                        <span style="font-size:11px; color:#94A3B8;">Align your face within the cyan oval</span>
+                        <span style="font-size:12.5px; font-weight:600; color:#F1F5F9;" id="cameraStatusText">Camera Ready</span><br>
+                        <span style="font-size:11px; color:#94A3B8;">Align face within oval guide or upload photo</span>
                     </div>
                 </div>
 
                 <!-- Liveness Challenge Feedback -->
-                <div class="liveness-instruction" id="livenessPrompt">
+                <div class="liveness-instruction" id="livenessPrompt" style="margin-top:10px;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M2 12h20M12 2v20"/>
                     </svg>
-                    <span id="livenessText">Liveness Challenge: Please look directly into the camera and blink twice.</span>
+                    <span id="livenessText">Liveness Challenge: Look directly into the camera and blink once.</span>
                 </div>
 
                 <!-- Verification Result Display -->
-                <div id="faceVerifyResult" style="display:none; margin-top:12px; padding:12px; border-radius:6px; background:#F0FDF4; border:1px solid #BBF7D0; color:#166534; font-size:12.5px;">
-                    <strong>Verification Passed (Score: 94.2%)</strong><br>
-                    <span>Enrolled Reference Template matched with current capture.</span>
+                <div id="faceVerifyResult" style="display:none; margin-top:12px; padding:12px; border-radius:6px; font-size:12px; text-align:left;"></div>
+
+                <!-- Testing & Upload Controls -->
+                <div style="margin-top:12px; padding:10px; background:#F8FAFC; border:1px dashed #CBD5E1; border-radius:6px;">
+                    <div style="font-size:11px; font-weight:700; color:#475569; margin-bottom:6px;">📁 Or Authenticate via Photo File:</div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <label class="btn-otp-action" style="font-size:11px; padding:4px 10px; cursor:pointer; background:#FFFFFF; border:1px solid #CBD5E1; margin:0;">
+                            <span>Upload Photo</span>
+                            <input type="file" id="faceFileInput" accept="image/*" style="display:none;" onchange="handleFaceFileUpload(event)">
+                        </label>
+                        <button type="button" class="btn-otp-action" style="font-size:10.5px; padding:4px 8px; background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;" onclick="testPresetFace('face validation.jpg')">
+                            Use face validation.jpg
+                        </button>
+                        <button type="button" class="btn-otp-action" style="font-size:10.5px; padding:4px 8px; background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;" onclick="testPresetFace('fv 2.jpeg')">
+                            Use fv 2.jpeg
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Biometric Privacy Safeguard Notice (Section 22) -->
-                <div class="privacy-safe-badge">
+                <div class="privacy-safe-badge" style="margin-top:10px;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#009291" stroke-width="2" style="flex-shrink:0; margin-top:1px;">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
-                    <span><strong>Biometric Privacy Safeguard:</strong> Zero raw facial images are stored on server systems. Only cryptographic verification hashes and status tokens are recorded in the immutable audit log.</span>
+                    <span><strong>Biometric Privacy Safeguard:</strong> Zero raw facial images are stored on server systems. Only cryptographic verification hashes are logged.</span>
                 </div>
 
-                <div style="margin-top:18px; display:flex; gap:10px;">
+                <div style="margin-top:16px; display:flex; gap:10px;">
                     <button type="button" class="btn-submit" id="btnTriggerFaceVerify" onclick="executeFaceVerification()" style="margin-top:0;">
                         <span>Capture &amp; Verify Face</span>
                     </button>
@@ -1202,16 +1221,23 @@
             }
         }
 
-        // Face Verification Modal & Webcam Logic (Replacing Aadhaar)
+        // Face Verification Modal & Biometric Match Logic (Strict Authorized Enrolled Profiles)
         let mediaStream = null;
+        let activeFacePayloadBase64 = null;
 
         function openFaceKycModal() {
+            activeFacePayloadBase64 = null;
             document.getElementById('faceKycModal').style.display = 'flex';
+            document.getElementById('faceVerifyResult').style.display = 'none';
             const video = document.getElementById('webcamVideo');
+            const canvas = document.getElementById('faceCanvas');
             const standby = document.getElementById('cameraStandby');
+            const statusText = document.getElementById('cameraStatusText');
+
+            canvas.style.display = 'none';
 
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } })
+                navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
                     .then(stream => {
                         mediaStream = stream;
                         video.srcObject = stream;
@@ -1219,16 +1245,14 @@
                         standby.style.display = 'none';
                     })
                     .catch(() => {
-                        // Keep standby view for environments without active webcam hardware
-                        standby.innerHTML = `
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#009291" stroke-width="1.8" style="margin:0 auto 8px; display:block;">
-                                <circle cx="12" cy="12" r="10"/>
-                                <path d="M12 6v6l4 2"/>
-                            </svg>
-                            <span style="font-size:12.5px; font-weight:600; color:#F1F5F9;">Virtual Biometric Camera Active</span><br>
-                            <span style="font-size:11px; color:#94A3B8;">Align within oval frame for AI liveness scan</span>
-                        `;
+                        standby.style.display = 'block';
+                        video.style.display = 'none';
+                        if (statusText) statusText.textContent = 'Webcam unavailable — Upload photo below';
                     });
+            } else {
+                standby.style.display = 'block';
+                video.style.display = 'none';
+                if (statusText) statusText.textContent = 'Upload photo below';
             }
         }
 
@@ -1237,14 +1261,88 @@
                 mediaStream.getTracks().forEach(track => track.stop());
                 mediaStream = null;
             }
+            activeFacePayloadBase64 = null;
             document.getElementById('faceKycModal').style.display = 'none';
             document.getElementById('faceVerifyResult').style.display = 'none';
         }
 
-        async function executeFaceVerification() {
+        function handleFaceFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                activeFacePayloadBase64 = e.target.result;
+                const canvas = document.getElementById('faceCanvas');
+                const video = document.getElementById('webcamVideo');
+                const standby = document.getElementById('cameraStandby');
+                const img = new Image();
+                img.onload = function() {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    canvas.style.display = 'block';
+                    video.style.display = 'none';
+                    standby.style.display = 'none';
+                };
+                img.src = activeFacePayloadBase64;
+                executeFaceVerification(activeFacePayloadBase64);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function testPresetFace(filename) {
+            const url = filename.includes('fv 2') ? '/static/images/face-validation-2.jpg' : '/static/images/face-validation-1.jpg';
+            const prompt = document.getElementById('livenessPrompt');
+            prompt.innerHTML = `<span>Loading <strong>${filename}</strong> for verification...</span>`;
+            
+            try {
+                const res = await fetch(url);
+                const blob = await res.blob();
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    activeFacePayloadBase64 = e.target.result;
+                    const canvas = document.getElementById('faceCanvas');
+                    const video = document.getElementById('webcamVideo');
+                    const standby = document.getElementById('cameraStandby');
+                    const img = new Image();
+                    img.onload = function() {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        canvas.style.display = 'block';
+                        video.style.display = 'none';
+                        standby.style.display = 'none';
+                    };
+                    img.src = activeFacePayloadBase64;
+                    executeFaceVerification(activeFacePayloadBase64);
+                };
+                reader.readAsDataURL(blob);
+            } catch (err) {
+                alert('Could not load preset face file. Please use the Upload Photo button.');
+            }
+        }
+
+        async function executeFaceVerification(explicitBase64 = null) {
             const btn = document.getElementById('btnTriggerFaceVerify');
             const prompt = document.getElementById('livenessPrompt');
             const resDiv = document.getElementById('faceVerifyResult');
+            const video = document.getElementById('webcamVideo');
+            const canvas = document.getElementById('faceCanvas');
+
+            let framePayload = explicitBase64 || activeFacePayloadBase64;
+
+            // If no explicit image is loaded, capture current frame from live webcam
+            if (!framePayload && video && video.srcObject && video.videoWidth) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                framePayload = canvas.toDataURL('image/jpeg', 0.90);
+                canvas.style.display = 'block';
+                video.style.display = 'none';
+            }
 
             btn.disabled = true;
             btn.innerHTML = `
@@ -1252,10 +1350,10 @@
                     <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
                     <path d="M12 2a10 10 0 0 1 10 10" stroke-opacity="1"/>
                 </svg>
-                <span>Evaluating Liveness &amp; Facial Match...</span>
+                <span>Scrutinizing Biometric Landmarks (YuNet + SFace)...</span>
             `;
 
-            prompt.innerHTML = `<span><strong>Liveness Challenge:</strong> Blink detected. Matching facial landmarks against registered template...</span>`;
+            prompt.innerHTML = `<span><strong>Biometric Scrutiny:</strong> Extracting 128-D facial vector. Comparing with authorized personnel...</span>`;
 
             try {
                 const res = await fetch('/api/kyc/face-verify', {
@@ -1263,29 +1361,76 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         user_id: "officer",
-                        challenge_response: "BLINK_CONFIRMED"
+                        challenge_response: "BLINK_CONFIRMED",
+                        captured_frame_base64: framePayload
                     })
                 });
                 const data = await res.json();
 
                 resDiv.style.display = 'block';
-                resDiv.innerHTML = `
-                    <strong>Identity Verification — Face Match Confirmed</strong><br>
-                    <span>Status: <strong style="color:#009291;">${data.verification_status}</strong> | Consistency Score: <strong>${data.similarity_score}%</strong></span><br>
-                    <span style="font-size:11px; color:#64748B;">Audit Token: <code>${data.audit_signature.slice(0, 32)}...</code></span>
-                `;
 
-                btn.innerHTML = `<span>Proceed to Dashboard &rarr;</span>`;
-                btn.disabled = false;
-                btn.onclick = () => {
-                    closeFaceKycModal();
-                    localStorage.setItem('parakh_officer_logged_in', 'true');
-                    localStorage.setItem('parakh_officer_name', 'Shri Rajesh K. Sharma (Face Verified)');
-                    window.location.href = '/portal/dashboard';
-                };
+                if (data.success && data.verification_status === 'VERIFIED') {
+                    // SUCCESS - AUTHORIZED OFFICER MATCH
+                    resDiv.style.background = '#F0FDF4';
+                    resDiv.style.border = '1px solid #86EFAC';
+                    resDiv.style.color = '#166534';
+                    resDiv.innerHTML = `
+                        <div style="display:flex; align-items:flex-start; gap:8px;">
+                            <span style="font-size:20px; line-height:1;">✅</span>
+                            <div>
+                                <strong style="font-size:13px; color:#15803D;">Biometric Verification Confirmed</strong><br>
+                                <span style="font-size:12px; color:#1E293B;">Authorized Officer: <strong>${data.officer_name || 'Enrolled Officer'}</strong></span><br>
+                                <span style="font-size:11.5px; color:#475569;">Biometric Consistency: <strong style="color:#009291;">${data.similarity_score}%</strong> (Matched with <em>${data.matched_profile || 'enrolled face'}</em>)</span><br>
+                                <span style="font-size:10px; color:#64748B;">Audit Signature: <code>${(data.audit_signature || '').slice(0, 30)}...</code></span>
+                            </div>
+                        </div>
+                    `;
+
+                    btn.disabled = false;
+                    btn.style.background = '#10B981';
+                    btn.innerHTML = `<span>Proceed to Officer Dashboard &rarr;</span>`;
+                    btn.onclick = () => {
+                        closeFaceKycModal();
+                        localStorage.setItem('parakh_officer_logged_in', 'true');
+                        localStorage.setItem('parakh_officer_name', data.officer_name || 'Shri Rajesh K. Sharma');
+                        localStorage.setItem('parakh_officer_role', 'Senior Procurement Officer');
+                        window.location.href = '/portal/dashboard';
+                    };
+                } else {
+                    // REJECTED - UNAUTHORIZED OR NO FACE
+                    resDiv.style.background = '#FEF2F2';
+                    resDiv.style.border = '1px solid #FECACA';
+                    resDiv.style.color = '#991B1B';
+                    resDiv.innerHTML = `
+                        <div style="display:flex; align-items:flex-start; gap:8px;">
+                            <span style="font-size:20px; line-height:1;">🚫</span>
+                            <div>
+                                <strong style="font-size:13px; color:#B91C1C;">Access Denied — Unauthorized Face</strong><br>
+                                <span style="font-size:11.5px; color:#475569;">${data.message || 'Face does not match registered authorized personnel.'}</span><br>
+                                <span style="font-size:11px; color:#991B1B; font-weight:600;">Match Confidence: ${data.similarity_score}% (Threshold: 75% required)</span><br>
+                                <span style="font-size:10px; color:#94A3B8;">Portal access remains strictly locked.</span>
+                            </div>
+                        </div>
+                    `;
+
+                    btn.disabled = false;
+                    btn.style.background = '#EF4444';
+                    btn.innerHTML = `<span>Retry Verification</span>`;
+                    btn.onclick = () => {
+                        btn.style.background = '';
+                        btn.innerHTML = `<span>Capture &amp; Verify Face</span>`;
+                        btn.onclick = () => executeFaceVerification();
+                        openFaceKycModal();
+                    };
+                }
             } catch (err) {
-                alert('Face verification communication error. Retrying with demo credentials.');
-                closeFaceKycModal();
+                resDiv.style.display = 'block';
+                resDiv.style.background = '#FEF2F2';
+                resDiv.style.border = '1px solid #FECACA';
+                resDiv.style.color = '#991B1B';
+                resDiv.innerHTML = `<strong>Communication Error:</strong> ${err.message}`;
+                btn.disabled = false;
+                btn.innerHTML = `<span>Retry</span>`;
             }
         }
 

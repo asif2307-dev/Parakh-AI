@@ -143,12 +143,14 @@ class FaceVerifyRequest(BaseModel):
 
 class FaceVerifyResponse(BaseModel):
     success: bool
-    verification_status: str # "VERIFIED", "LIVENESS_FAILED", "MATCH_FAILED", "MANUAL_REVIEW", "PROVIDER_NOT_CONFIGURED"
+    verification_status: str # "VERIFIED", "LIVENESS_FAILED", "MATCH_FAILED", "UNAUTHORIZED_FACE", "MANUAL_REVIEW"
     liveness_passed: bool
     similarity_score: float
     message: str
     audit_signature: str
     evaluated_at: str
+    officer_name: Optional[str] = None
+    matched_profile: Optional[str] = None
 
 class OrgVerifyRequest(BaseModel):
     cin: str
