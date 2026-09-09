@@ -332,11 +332,27 @@ class SmartBidEngine:
             ]
         }
 
+        perspectives = {
+            "overall": {"ranked": overall_ranked, "recommended_bid": overall_ranked[0]},
+            "value_for_money": {"ranked": vfm_ranked, "recommended_bid": vfm_ranked[0]},
+            "experience": {"ranked": exp_ranked, "recommended_bid": exp_ranked[0]},
+            "performance": {"ranked": perf_ranked, "recommended_bid": perf_ranked[0]},
+            "compliance": {"ranked": comp_ranked, "recommended_bid": comp_ranked[0]},
+            "risk": {"ranked": risk_ranked, "recommended_bid": risk_ranked[0]},
+            "integrity": {"ranked": integrity_ranked, "recommended_bid": integrity_ranked[0]},
+            "risk_adjusted_vfm": {
+                "ranked": risk_adj_vfm_ranked,
+                "recommended_bid": risk_adj_vfm_ranked[0],
+                "reason": "Risk penalty deductions applied for adverse governance and integrity flags"
+            }
+        }
+
         return {
             "success": True,
             "bids_evaluated_count": len(evaluated_bids),
             "ranked_bids": overall_ranked,
             "recommendation": recommendation,
+            "perspectives": perspectives,
             "weights_used": cls.DEFAULT_WEIGHTS,
             "perspectives_available": [
                 {"id": "overall", "label": "Overall Priority", "description": "Holistic weighted composite across all 8 dimensions."},

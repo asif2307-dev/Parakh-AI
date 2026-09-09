@@ -562,6 +562,38 @@
       this.activeAdminTab = 'users';
       this.viewHistory = [];
 
+      // FEATURE 1: Active Bidders State
+      this.activeBidders = [];
+      this.filteredActiveBidders = [];
+      this.activeBiddersCurrentPage = 1;
+      this.activeBiddersPerPage = 5;
+
+      // FEATURE 2: Live Tenders State
+      this.liveTenders = [];
+      this.filteredLiveTenders = [];
+      this.liveTendersCurrentPage = 1;
+      this.liveTendersPerPage = 6;
+      this.currentSelectedTender = null;
+      this.recordsActiveTab = 'live-tenders';
+
+      // FEATURE 3: Floating AI Chat Copilot State
+      this.isAiChatOpen = false;
+      this.aiChatMessages = [
+        {
+          role: 'assistant',
+          content: 'Greetings Officer. I am **PARAKH AI Copilot**, your grounded procurement intelligence assistant. You can ask me to analyze tender requirements, evaluate bidder compliance, verify MCA21 turnover divergence, or cross-check statutory debarments.',
+          sources: [
+            { title: "GeM Procurement Verification Manual 2026", type: "TENDER_CLAUSE", snippet: "Automated decision-support under Rule 151 of GFR 2017." }
+          ],
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ];
+      this.aiConversationId = `conv-${Date.now()}`;
+
+      // FEATURE 4: Debarment & Criminal Cross-Check State
+      this.currentDebarmentCheck = null;
+      this.currentIntegrityBidderId = 'BID-2026-003';
+
       this.init();
     }
 
@@ -577,6 +609,11 @@
       this.loadAnalysisCase('CASE-8841');
       this.refreshCaptcha();
       this.setupDropzone();
+
+      // Initialize four features
+      this.loadActiveBidders();
+      this.loadLiveTenders();
+      this.initAiChat();
 
       // Listen for browser hash navigation (e.g. #dashboard, #home, #records)
       window.addEventListener('hashchange', () => {
@@ -726,13 +763,18 @@
       // Handle specific view hooks
       if (viewName === 'dashboard') {
         this.renderComplianceChart();
+        this.renderActiveBiddersTable();
       } else if (viewName === 'records') {
-        if (filterPsu) {
-          const psuSelect = document.getElementById('filterPsuSelect');
-          if (psuSelect) psuSelect.value = filterPsu;
-          this.applyFilters();
+        if (this.recordsActiveTab === 'live-tenders') {
+          this.renderLiveTendersTable();
         } else {
-          this.renderRecordsTable();
+          if (filterPsu) {
+            const psuSelect = document.getElementById('filterPsuSelect');
+            if (psuSelect) psuSelect.value = filterPsu;
+            this.applyFilters();
+          } else {
+            this.renderRecordsTable();
+          }
         }
       } else if (viewName === 'alerts' || viewName === 'notifications') {
         this.renderAlerts();
@@ -745,6 +787,8 @@
       } else if (viewName === 'risk') {
         this.renderIntegrityRiskView();
       }
+
+      this.updateAiChatContext();
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -2881,9 +2925,12 @@
       }
 
       this.renderSignalsTable(this.activeIntegritySignals);
+      this.loadDebarmentCheck(this.currentIntegrityBidderId);
+      this.updateAiChatContext();
     }
 
     onIntegrityBidderChange(bidId) {
+      this.currentIntegrityBidderId = bidId;
       this.renderIntegrityRiskView(bidId);
     }
 
@@ -3056,10 +3103,746 @@
         this.renderAuditHistory();
       }
     }
+
+    // =========================================================================
+    // FEATURE 1: ACTIVE BIDDER APPLICATIONS
+    // =========================================================================
+    async loadActiveBidders() {
+      const loadingEl = document.getElementById('activeBiddersLoading');
+      const errorEl = document.getElementById('activeBiddersError');
+      const emptyEl = document.getElementById('activeBiddersEmpty');
+
+      if (loadingEl) loadingEl.style.display = 'block';
+      if (errorEl) errorEl.style.display = 'none';
+      if (emptyEl) emptyEl.style.display = 'none';
+
+      try {
+        const resp = await window.api.getActiveBidders({ page: 1, page_size: 50 });
+        if (resp && resp.success && resp.data) {
+          this.activeBidders = resp.data;
+          this.filteredActiveBidders = [...this.activeBidders];
+          this.renderActiveBiddersTable();
+        } else {
+          throw new Error("Invalid response format");
+        }
+      } catch (err) {
+        console.warn("Failed to fetch active bidders from API, using cached state:", err);
+        if (errorEl) errorEl.style.display = 'block';
+      } finally {
+        if (loadingEl) loadingEl.style.display = 'none';
+      }
+    }
+
+    filterActiveBidders() {
+      const searchInput = document.getElementById('activeBiddersSearchInput');
+      const statusSelect = document.getElementById('activeBiddersStatusFilter');
+      const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      const status = statusSelect ? statusSelect.value : 'ALL';
+
+      this.filteredActiveBidders = this.activeBidders.filter(b => {
+        const matchesTerm = !term || (
+          (b.bidderName && b.bidderName.toLowerCase().includes(term)) ||
+          (b.tenderId && b.tenderId.toLowerCase().includes(term)) ||
+          (b.tenderTitle && b.tenderTitle.toLowerCase().includes(term)) ||
+          (b.gstin && b.gstin.toLowerCase().includes(term)) ||
+          (b.udyam && b.udyam.toLowerCase().includes(term))
+        );
+        const matchesStatus = (status === 'ALL') || (b.status && b.status.toLowerCase() === status.toLowerCase());
+        return matchesTerm && matchesStatus;
+      });
+
+      this.activeBiddersCurrentPage = 1;
+      this.renderActiveBiddersTable();
+    }
+
+    renderActiveBiddersTable() {
+      const tbody = document.getElementById('activeBiddersTbody');
+      const emptyEl = document.getElementById('activeBiddersEmpty');
+      const pageInfo = document.getElementById('activeBiddersPageInfo');
+      const prevBtn = document.getElementById('activeBiddersPrevBtn');
+      const nextBtn = document.getElementById('activeBiddersNextBtn');
+      if (!tbody) return;
+
+      tbody.innerHTML = '';
+      const total = this.filteredActiveBidders.length;
+
+      if (total === 0) {
+        if (emptyEl) emptyEl.style.display = 'block';
+        if (pageInfo) pageInfo.textContent = 'Showing 0 active applications';
+        if (prevBtn) prevBtn.disabled = true;
+        if (nextBtn) nextBtn.disabled = true;
+        return;
+      }
+      if (emptyEl) emptyEl.style.display = 'none';
+
+      const startIdx = (this.activeBiddersCurrentPage - 1) * this.activeBiddersPerPage;
+      const endIdx = Math.min(startIdx + this.activeBiddersPerPage, total);
+      const pageItems = this.filteredActiveBidders.slice(startIdx, endIdx);
+
+      if (pageInfo) pageInfo.textContent = `Showing ${startIdx + 1}-${endIdx} of ${total} active applications`;
+      if (prevBtn) prevBtn.disabled = (this.activeBiddersCurrentPage <= 1);
+      if (nextBtn) nextBtn.disabled = (endIdx >= total);
+
+      pageItems.forEach(b => {
+        const tr = document.createElement('tr');
+        let statusBadge = 'badge-info';
+        if (b.status === 'Compliant') statusBadge = 'badge-success';
+        else if (b.status === 'Under Analysis') statusBadge = 'badge-info';
+        else if (b.status === 'Needs Review') statusBadge = 'badge-high';
+
+        tr.innerHTML = `
+          <td><strong style="color:var(--parakh-navy);">${b.tenderId}</strong></td>
+          <td><div style="font-weight:600; color:#1E293B; font-size:12px;">${b.tenderTitle}</div><div style="font-size:11px; color:#64748B;">${b.department}</div></td>
+          <td><strong style="color:#0F172A;">${b.bidderName}</strong></td>
+          <td><span style="font-size:11.5px; color:#334155;">${b.registrationType}</span></td>
+          <td>
+            <div style="font-family:monospace; font-size:11px; color:#0369A1;">GST: ${b.gstin}</div>
+            <div style="font-family:monospace; font-size:11px; color:#475569;">UDYAM: ${b.udyam}</div>
+          </td>
+          <td style="font-size:11.5px; color:#475569; white-space:nowrap;">${b.submissionTime}</td>
+          <td><span class="badge ${statusBadge}">${b.status}</span></td>
+          <td style="text-align:right; white-space:nowrap;">
+            <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px; padding:3px 7px;" onclick="parakhApp.viewTenderFromTable('${b.tenderId}')" title="View Tender Specifications">Tender</button>
+            <button type="button" class="btn btn-accent btn-sm" style="font-size:11px; padding:3px 7px; margin-left:4px;" onclick="parakhApp.analyseRiskFromTable('${b.id}')" title="Run Risk & Statutory Scrutiny">Analyse Risk</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    activeBiddersPrevPage() {
+      if (this.activeBiddersCurrentPage > 1) {
+        this.activeBiddersCurrentPage--;
+        this.renderActiveBiddersTable();
+      }
+    }
+
+    activeBiddersNextPage() {
+      const maxPage = Math.ceil(this.filteredActiveBidders.length / this.activeBiddersPerPage);
+      if (this.activeBiddersCurrentPage < maxPage) {
+        this.activeBiddersCurrentPage++;
+        this.renderActiveBiddersTable();
+      }
+    }
+
+    viewTenderFromTable(tenderId) {
+      this.openTenderDetail(tenderId);
+    }
+
+    analyseRiskFromTable(bidId) {
+      this.currentIntegrityBidderId = bidId;
+      this.switchView('risk');
+      this.renderIntegrityRiskView(bidId);
+    }
+
+    // =========================================================================
+    // FEATURE 2: LIVE TENDERS & SPECIFICATIONS
+    // =========================================================================
+    switchRecordsTab(tabName) {
+      this.recordsActiveTab = tabName;
+      const tabLive = document.getElementById('recordsTabLiveTenders');
+      const tabTelemetry = document.getElementById('recordsTabTelemetry');
+      const btnLive = document.getElementById('tabBtnLiveTenders');
+      const btnTelemetry = document.getElementById('tabBtnTelemetry');
+
+      if (tabName === 'live-tenders') {
+        if (tabLive) tabLive.style.display = 'block';
+        if (tabTelemetry) tabTelemetry.style.display = 'none';
+        if (btnLive) { btnLive.classList.add('btn-primary'); btnLive.classList.remove('btn-secondary'); }
+        if (btnTelemetry) { btnTelemetry.classList.remove('btn-primary'); btnTelemetry.classList.add('btn-secondary'); }
+        this.renderLiveTendersTable();
+      } else {
+        if (tabLive) tabLive.style.display = 'none';
+        if (tabTelemetry) tabTelemetry.style.display = 'block';
+        if (btnLive) { btnLive.classList.remove('btn-primary'); btnLive.classList.add('btn-secondary'); }
+        if (btnTelemetry) { btnTelemetry.classList.add('btn-primary'); btnTelemetry.classList.remove('btn-secondary'); }
+        this.renderRecordsTable();
+      }
+    }
+
+    async loadLiveTenders() {
+      const loadingEl = document.getElementById('liveTendersLoading');
+      const errorEl = document.getElementById('liveTendersError');
+      const emptyEl = document.getElementById('liveTendersEmpty');
+
+      if (loadingEl) loadingEl.style.display = 'block';
+      if (errorEl) errorEl.style.display = 'none';
+      if (emptyEl) emptyEl.style.display = 'none';
+
+      try {
+        const resp = await window.api.getLiveTenders({ page: 1, page_size: 50 });
+        if (resp && resp.success && resp.data) {
+          this.liveTenders = resp.data;
+          this.filteredLiveTenders = [...this.liveTenders];
+          this.renderLiveTendersTable();
+        }
+      } catch (err) {
+        console.warn("Failed to fetch live tenders:", err);
+        if (errorEl) errorEl.style.display = 'block';
+      } finally {
+        if (loadingEl) loadingEl.style.display = 'none';
+      }
+    }
+
+    filterLiveTenders() {
+      const searchInput = document.getElementById('liveTendersSearchInput');
+      const deptSelect = document.getElementById('liveTendersDeptFilter');
+      const statusSelect = document.getElementById('liveTendersStatusFilter');
+      const sortSelect = document.getElementById('liveTendersSort');
+
+      const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      const dept = deptSelect ? deptSelect.value : 'ALL';
+      const status = statusSelect ? statusSelect.value : 'ALL';
+      const sort = sortSelect ? sortSelect.value : 'ASC';
+
+      this.filteredLiveTenders = this.liveTenders.filter(t => {
+        const matchesTerm = !term || (
+          t.tenderId.toLowerCase().includes(term) ||
+          t.title.toLowerCase().includes(term) ||
+          t.department.toLowerCase().includes(term) ||
+          (t.category && t.category.toLowerCase().includes(term))
+        );
+        const matchesDept = (dept === 'ALL') || t.department.toLowerCase().includes(dept.toLowerCase());
+        const matchesStatus = (status === 'ALL') || t.status.toUpperCase() === status.toUpperCase();
+        return matchesTerm && matchesDept && matchesStatus;
+      });
+
+      // Sort by closing date
+      this.filteredLiveTenders.sort((a, b) => {
+        const d1 = new Date(a.closingDate.replace(' IST', ''));
+        const d2 = new Date(b.closingDate.replace(' IST', ''));
+        return sort === 'ASC' ? d1 - d2 : d2 - d1;
+      });
+
+      this.liveTendersCurrentPage = 1;
+      this.renderLiveTendersTable();
+    }
+
+    resetLiveTendersFilter() {
+      const s = document.getElementById('liveTendersSearchInput');
+      const d = document.getElementById('liveTendersDeptFilter');
+      const st = document.getElementById('liveTendersStatusFilter');
+      const so = document.getElementById('liveTendersSort');
+      if (s) s.value = '';
+      if (d) d.value = 'ALL';
+      if (st) st.value = 'ALL';
+      if (so) so.value = 'ASC';
+      this.filteredLiveTenders = [...this.liveTenders];
+      this.liveTendersCurrentPage = 1;
+      this.renderLiveTendersTable();
+    }
+
+    renderLiveTendersTable() {
+      const tbody = document.getElementById('liveTendersTbody');
+      const emptyEl = document.getElementById('liveTendersEmpty');
+      const pageInfo = document.getElementById('liveTendersPageInfo');
+      const countLabel = document.getElementById('liveTendersCountLabel');
+      const prevBtn = document.getElementById('liveTendersPrevBtn');
+      const nextBtn = document.getElementById('liveTendersNextBtn');
+      if (!tbody) return;
+
+      tbody.innerHTML = '';
+      const total = this.filteredLiveTenders.length;
+
+      if (countLabel) countLabel.textContent = `Showing ${total} Open Tenders`;
+
+      if (total === 0) {
+        if (emptyEl) emptyEl.style.display = 'block';
+        if (pageInfo) pageInfo.textContent = 'Showing 0 tenders';
+        if (prevBtn) prevBtn.disabled = true;
+        if (nextBtn) nextBtn.disabled = true;
+        return;
+      }
+      if (emptyEl) emptyEl.style.display = 'none';
+
+      const startIdx = (this.liveTendersCurrentPage - 1) * this.liveTendersPerPage;
+      const endIdx = Math.min(startIdx + this.liveTendersPerPage, total);
+      const pageItems = this.filteredLiveTenders.slice(startIdx, endIdx);
+
+      if (pageInfo) pageInfo.textContent = `Showing ${startIdx + 1}-${endIdx} of ${total} tenders`;
+      if (prevBtn) prevBtn.disabled = (this.liveTendersCurrentPage <= 1);
+      if (nextBtn) nextBtn.disabled = (endIdx >= total);
+
+      pageItems.forEach(t => {
+        const tr = document.createElement('tr');
+        let statusBadge = 'badge-success';
+        if (t.status === 'UNDER_EVALUATION') statusBadge = 'badge-high';
+        else if (t.status === 'CLOSED') statusBadge = 'badge-info';
+
+        tr.innerHTML = `
+          <td><strong style="color:var(--parakh-navy);">${t.tenderId}</strong></td>
+          <td>
+            <div style="font-weight:700; color:#1E293B; font-size:12.5px;">${t.title}</div>
+            <div style="font-size:11px; color:#475569; margin-top:2px;">Est Value: <strong>${t.estimatedValue || 'Not specified'}</strong></div>
+          </td>
+          <td><span style="font-size:12px; color:#334155; font-weight:600;">${t.department}</span></td>
+          <td style="font-size:11.5px; color:#475569;">${t.category}</td>
+          <td style="font-size:11.5px; color:#0F172A; white-space:nowrap;"><strong>${t.closingDate}</strong></td>
+          <td><span class="badge ${statusBadge}">${t.status}</span></td>
+          <td style="text-align:center;"><span style="background:#E0E7FF; color:#3730A3; font-weight:800; font-size:11.5px; padding:2px 8px; border-radius:10px;">${t.activeBiddersCount || 1}</span></td>
+          <td style="text-align:right;">
+            <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px; padding:4px 8px;" onclick="parakhApp.openTenderDetail('${t.tenderId}')">
+              View Details &raquo;
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    liveTendersPrevPage() {
+      if (this.liveTendersCurrentPage > 1) {
+        this.liveTendersCurrentPage--;
+        this.renderLiveTendersTable();
+      }
+    }
+
+    liveTendersNextPage() {
+      const maxPage = Math.ceil(this.filteredLiveTenders.length / this.liveTendersPerPage);
+      if (this.liveTendersCurrentPage < maxPage) {
+        this.liveTendersCurrentPage++;
+        this.renderLiveTendersTable();
+      }
+    }
+
+    async openTenderDetail(tenderId) {
+      const modal = document.getElementById('tenderDetailModal');
+      const titleEl = document.getElementById('tenderModalTitle');
+      const refEl = document.getElementById('tenderModalRef');
+      const bodyEl = document.getElementById('tenderModalBody');
+      if (!modal) return;
+
+      if (titleEl) titleEl.textContent = 'Loading Tender Specifications...';
+      if (refEl) refEl.textContent = tenderId;
+      if (bodyEl) bodyEl.innerHTML = '<div style="padding:32px; text-align:center; color:#1E40AF;">⚡ Retrieving structured clauses and active submissions from GeM...</div>';
+      modal.style.display = 'flex';
+
+      try {
+        const resp = await window.api.getTenderDetail(tenderId);
+        if (resp && resp.success) {
+          const t = resp.tender;
+          this.currentSelectedTender = t;
+          if (titleEl) titleEl.textContent = t.title;
+          if (refEl) refEl.textContent = t.tenderId;
+
+          const reqsHtml = (resp.requirements || []).map(r => `
+            <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:4px; padding:10px 14px; margin-bottom:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong style="color:var(--parakh-navy); font-size:12.5px;">${r.clauseNumber}: ${r.title}</strong>
+                ${r.isCritical ? '<span class="badge badge-critical" style="font-size:10px;">CRITICAL MANDATORY</span>' : '<span class="badge badge-info" style="font-size:10px;">STANDARD</span>'}
+              </div>
+              <div style="font-size:12px; color:#475569; margin-top:4px;">${r.description}</div>
+            </div>
+          `).join('') || '<div style="font-size:12px; color:#64748B;">No explicit criteria attached.</div>';
+
+          const biddersHtml = (resp.activeBidders || []).map(b => `
+            <tr>
+              <td><strong>${b.bidderName}</strong></td>
+              <td>${b.registrationType}</td>
+              <td style="font-family:monospace; font-size:11px;">${b.gstin}</td>
+              <td style="font-size:11.5px;">${b.submissionTime}</td>
+              <td><span class="badge ${b.status === 'Compliant' ? 'badge-success' : (b.status === 'Needs Review' ? 'badge-high' : 'badge-info')}">${b.status}</span></td>
+              <td style="text-align:right;">
+                <button type="button" class="btn btn-accent btn-sm" style="font-size:11px; padding:3px 7px;" onclick="parakhApp.closeTenderDetailModal(); parakhApp.analyseRiskFromTable('${b.id}');">Analyse Bidder</button>
+              </td>
+            </tr>
+          `).join('') || '<tr><td colspan="6" style="text-align:center; color:#64748B;">No submitted bidder applications on file.</td></tr>';
+
+          if (bodyEl) {
+            bodyEl.innerHTML = `
+              <!-- Scope and Metadata Summary -->
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-bottom:16px;">
+                <div style="background:#F1F5F9; padding:10px; border-radius:4px; border:1px solid #CBD5E1;">
+                  <div style="font-size:11px; color:#64748B; font-weight:700;">PROCURING ENTITY</div>
+                  <div style="font-size:13px; font-weight:700; color:#0F172A; margin-top:2px;">${t.department}</div>
+                </div>
+                <div style="background:#F1F5F9; padding:10px; border-radius:4px; border:1px solid #CBD5E1;">
+                  <div style="font-size:11px; color:#64748B; font-weight:700;">ESTIMATED PROCUREMENT VALUE</div>
+                  <div style="font-size:14px; font-weight:800; color:#166534; margin-top:2px;">${t.estimatedValue || 'Not specified'}</div>
+                </div>
+                <div style="background:#F1F5F9; padding:10px; border-radius:4px; border:1px solid #CBD5E1;">
+                  <div style="font-size:11px; color:#64748B; font-weight:700;">CLOSING DEADLINE</div>
+                  <div style="font-size:13px; font-weight:700; color:#991B1B; margin-top:2px;">${t.closingDate}</div>
+                </div>
+                <div style="background:#F1F5F9; padding:10px; border-radius:4px; border:1px solid #CBD5E1;">
+                  <div style="font-size:11px; color:#64748B; font-weight:700;">TENDER STATUS</div>
+                  <div style="margin-top:4px;"><span class="badge ${t.status === 'OPEN' ? 'badge-success' : 'badge-high'}">${t.status}</span></div>
+                </div>
+              </div>
+
+              <!-- Scope Description -->
+              <div style="margin-bottom:16px;">
+                <strong style="font-size:12px; color:var(--parakh-navy); text-transform:uppercase;">Procurement Scope & Statement of Work:</strong>
+                <p style="font-size:12.5px; color:#334155; line-height:1.5; margin:6px 0 0 0;">${t.description || 'Government public tender.'}</p>
+              </div>
+
+              <!-- Mandatory Clauses -->
+              <div style="margin-bottom:16px;">
+                <strong style="font-size:12px; color:var(--parakh-navy); text-transform:uppercase;">Mandatory Tender Specifications & Eligibility Clauses:</strong>
+                <div style="margin-top:8px;">${reqsHtml}</div>
+              </div>
+
+              <!-- Active Bidder Applications -->
+              <div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <strong style="font-size:12px; color:var(--parakh-navy); text-transform:uppercase;">Submitted Bidder Applications (${resp.activeBidders ? resp.activeBidders.length : 0}):</strong>
+                  <span style="font-size:11px; color:#166534; font-weight:600;">● Real-Time Intake</span>
+                </div>
+                <div class="table-responsive">
+                  <table class="table-gov" style="font-size:12px;">
+                    <thead>
+                      <tr>
+                        <th>Bidder Name</th>
+                        <th>Registration</th>
+                        <th>GSTIN</th>
+                        <th>Submission Date</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>${biddersHtml}</tbody>
+                  </table>
+                </div>
+              </div>
+            `;
+          }
+        }
+      } catch (err) {
+        if (bodyEl) bodyEl.innerHTML = `<div style="padding:20px; background:#FEF2F2; color:#991B1B; border-radius:4px;">Failed to load tender specifications: ${err.message}</div>`;
+      }
+    }
+
+    closeTenderDetailModal() {
+      const modal = document.getElementById('tenderDetailModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    runTenderAnalysisFromModal() {
+      this.closeTenderDetailModal();
+      this.switchView('compliance');
+      this.runAiAnalysisPipeline();
+    }
+
+    // =========================================================================
+    // FEATURE 3: FLOATING AI CHAT ASSISTANT
+    // =========================================================================
+    initAiChat() {
+      this.renderAiChatMessages();
+      this.updateAiChatContext();
+    }
+
+    toggleAiChat() {
+      const box = document.getElementById('parakhAiChatBox');
+      if (!box) return;
+      this.isAiChatOpen = !this.isAiChatOpen;
+      box.style.display = this.isAiChatOpen ? 'flex' : 'none';
+      if (this.isAiChatOpen) {
+        this.updateAiChatContext();
+        const input = document.getElementById('aiChatInput');
+        if (input) setTimeout(() => input.focus(), 150);
+        this.scrollChatToBottom();
+      }
+    }
+
+    updateAiChatContext() {
+      const label = document.getElementById('chatActiveContextLabel');
+      const viewTag = document.getElementById('chatActiveViewTag');
+      const sub = document.getElementById('chatContextSubtitle');
+
+      const bidderId = this.currentIntegrityBidderId || 'BID-2026-003';
+      const bidderNames = {
+        'BID-2026-003': 'Bharat Industrial Systems',
+        'BID-2026-002': 'XYZ Infra Solutions',
+        'BID-2026-001': 'ABC Engineering Pvt. Ltd.',
+        'BID-2026-004': 'Kirloskar Dynamics Ltd.',
+        'BID-2026-005': 'CyberTech Solutions LLP',
+        'BID-2026-006': 'PowerGrid Equipments India'
+      };
+      const bName = bidderNames[bidderId] || bidderId;
+
+      if (label) label.innerHTML = `📍 <strong>Target:</strong> ${bName}`;
+      if (viewTag) viewTag.textContent = (this.currentView || 'DASHBOARD').toUpperCase();
+      if (sub) sub.textContent = `Context: ${bName} | ${this.currentView || 'Portal'}`;
+    }
+
+    clearAiChat() {
+      this.aiChatMessages = [
+        {
+          role: 'assistant',
+          content: 'Conversation history reset. I am ready with full portal context. How may I assist your procurement evaluation?',
+          sources: [],
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ];
+      this.aiConversationId = `conv-${Date.now()}`;
+      this.renderAiChatMessages();
+    }
+
+    sendPredefinedChatMessage(text) {
+      const input = document.getElementById('aiChatInput');
+      if (input) input.value = text;
+      this.sendUserChatMessage();
+    }
+
+    async sendUserChatMessage() {
+      const input = document.getElementById('aiChatInput');
+      if (!input) return;
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = '';
+
+      // Append user message to state
+      this.aiChatMessages.push({
+        role: 'user',
+        content: text,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      this.renderAiChatMessages();
+      this.scrollChatToBottom();
+
+      const typingEl = document.getElementById('aiChatTypingIndicator');
+      if (typingEl) typingEl.style.display = 'flex';
+
+      const contextObj = {
+        tenderId: this.currentSelectedTender ? this.currentSelectedTender.tenderId : "GEM/2026/B/882109",
+        bidderId: this.currentIntegrityBidderId || "BID-2026-003",
+        currentView: this.currentView || "dashboard"
+      };
+
+      try {
+        const resp = await window.api.sendChatMessage(text, contextObj, this.aiConversationId);
+        if (resp && resp.success) {
+          this.aiChatMessages.push({
+            role: 'assistant',
+            content: resp.answer,
+            sources: resp.sources || [],
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          });
+        } else {
+          throw new Error("Invalid response from assistant");
+        }
+      } catch (err) {
+        this.aiChatMessages.push({
+          role: 'assistant',
+          content: `⚠️ Communication alert: Unable to reach AI copilot core. (${err.message}). Grounded rule matrix fallback remains active on portal scrutiny.`,
+          sources: [],
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+      } finally {
+        if (typingEl) typingEl.style.display = 'none';
+        this.renderAiChatMessages();
+        this.scrollChatToBottom();
+      }
+    }
+
+    renderAiChatMessages() {
+      const container = document.getElementById('aiChatMessages');
+      if (!container) return;
+      container.innerHTML = '';
+
+      this.aiChatMessages.forEach((m, idx) => {
+        const msgDiv = document.createElement('div');
+        const isUser = m.role === 'user';
+
+        let sourcesHtml = '';
+        if (m.sources && m.sources.length > 0) {
+          sourcesHtml = `
+            <div style="margin-top:8px; border-top:1px solid rgba(0,0,0,0.08); padding-top:6px;">
+              <div style="font-size:10px; font-weight:800; color:#0369A1; text-transform:uppercase; letter-spacing:0.5px;">Grounded Verification Citations (${m.sources.length}):</div>
+              <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
+                ${m.sources.map(s => `
+                  <div style="background:#F0F9FF; border:1px solid #BAE6FD; border-radius:3px; padding:4px 8px; font-size:10.5px; color:#0C4A6E;">
+                    <div style="font-weight:700;">📌 ${s.title} ${s.reference ? `(${s.reference})` : ''}</div>
+                    <div style="color:#0369A1; font-size:10px; margin-top:1px;">"${s.snippet}"</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        // Format markdown bold & linebreaks
+        const formattedContent = m.content
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\n/g, '<br>');
+
+        msgDiv.style.display = 'flex';
+        msgDiv.style.flexDirection = 'column';
+        msgDiv.style.alignItems = isUser ? 'flex-end' : 'flex-start';
+
+        msgDiv.innerHTML = `
+          <div style="max-width:85%; padding:10px 14px; border-radius:${isUser ? '14px 14px 2px 14px' : '14px 14px 14px 2px'}; background:${isUser ? 'var(--parakh-navy)' : '#FFFFFF'}; color:${isUser ? '#FFFFFF' : '#0F172A'}; font-size:12.5px; line-height:1.45; border:1px solid ${isUser ? 'transparent' : '#CBD5E1'}; box-shadow:0 1px 4px rgba(0,0,0,0.05);">
+            <div>${formattedContent}</div>
+            ${sourcesHtml}
+            <div style="font-size:9.5px; color:${isUser ? '#94A3B8' : '#64748B'}; margin-top:4px; text-align:right;">${m.timestamp}</div>
+          </div>
+        `;
+        container.appendChild(msgDiv);
+      });
+    }
+
+    scrollChatToBottom() {
+      const container = document.getElementById('aiChatMessages');
+      if (container) {
+        setTimeout(() => {
+          container.scrollTop = container.scrollHeight;
+        }, 50);
+      }
+    }
+
+    // =========================================================================
+    // FEATURE 4: DEBARMENT & CRIMINAL RECORD CROSS-CHECK
+    // =========================================================================
+    async loadDebarmentCheck(bidId) {
+      const bannerTitle = document.getElementById('debarmentBannerTitle');
+      const bannerSubtitle = document.getElementById('debarmentBannerSubtitle');
+      const bannerDesc = document.getElementById('debarmentBannerDesc');
+      const bannerWrap = document.getElementById('debarmentStatusBanner');
+      const confScore = document.getElementById('debarmentConfidenceScore');
+      const riskBadge = document.getElementById('debarmentRiskClassBadge');
+      const idGrid = document.getElementById('debarmentIdentifiersGrid');
+      const evidenceBox = document.getElementById('debarmentEvidenceBox');
+      const evidenceContent = document.getElementById('debarmentEvidenceContent');
+      const advText = document.getElementById('debarmentAdvisoryText');
+      const timeEl = document.getElementById('debarmentTimestamp');
+
+      try {
+        const resp = await window.api.getDebarmentCheck(bidId);
+        if (resp && resp.success) {
+          this.currentDebarmentCheck = resp;
+
+          // Configure banner style based on risk classification
+          if (resp.riskClassification === 'CRITICAL_DEBARMENT') {
+            if (bannerWrap) { bannerWrap.style.background = '#FEF2F2'; bannerWrap.style.borderColor = '#FECACA'; }
+            if (bannerSubtitle) { bannerSubtitle.textContent = 'CRITICAL STATUTORY DISQUALIFICATION'; bannerSubtitle.style.color = '#B91C1C'; }
+            if (bannerTitle) { bannerTitle.textContent = '🔴 Verified Active Debarment on Record'; bannerTitle.style.color = '#991B1B'; }
+            if (riskBadge) { riskBadge.className = 'badge badge-critical'; riskBadge.textContent = 'STATUTORILY BARRED'; }
+            if (confScore) { confScore.textContent = `${resp.matchConfidence}% Match`; confScore.style.color = '#991B1B'; }
+          } else if (resp.riskClassification === 'ELEVATED_RISK') {
+            if (bannerWrap) { bannerWrap.style.background = '#FFFBEB'; bannerWrap.style.borderColor = '#FDE68A'; }
+            if (bannerSubtitle) { bannerSubtitle.textContent = 'HISTORICAL RESTRICTED RECORD FOUND'; bannerSubtitle.style.color = '#B45309'; }
+            if (bannerTitle) { bannerTitle.textContent = '⚠️ Resolved Debarment on Record'; bannerTitle.style.color = '#92400E'; }
+            if (riskBadge) { riskBadge.className = 'badge badge-high'; riskBadge.textContent = 'ELEVATED RISK'; }
+            if (confScore) { confScore.textContent = `${resp.matchConfidence}% Match`; confScore.style.color = '#B45309'; }
+          } else if (resp.riskClassification === 'ADVISORY') {
+            if (bannerWrap) { bannerWrap.style.background = '#FFFBEB'; bannerWrap.style.borderColor = '#FDE68A'; }
+            if (bannerSubtitle) { bannerSubtitle.textContent = 'ENTITY AMBIGUITY DETECTED'; bannerSubtitle.style.color = '#B45309'; }
+            if (bannerTitle) { bannerTitle.textContent = '⚠️ Potential Match (Manual Review Required)'; bannerTitle.style.color = '#92400E'; }
+            if (riskBadge) { riskBadge.className = 'badge badge-high'; riskBadge.textContent = 'MANUAL REVIEW'; }
+            if (confScore) { confScore.textContent = `${resp.matchConfidence}% Similarity`; confScore.style.color = '#B45309'; }
+          } else {
+            if (bannerWrap) { bannerWrap.style.background = '#F0FDF4'; bannerWrap.style.borderColor = '#BBF7D0'; }
+            if (bannerSubtitle) { bannerSubtitle.textContent = 'STATUTORY SCRUTINY STATUS'; bannerSubtitle.style.color = '#15803D'; }
+            if (bannerTitle) { bannerTitle.textContent = '✓ No Verified Restricted Record Found'; bannerTitle.style.color = '#166534'; }
+            if (riskBadge) { riskBadge.className = 'badge badge-success'; riskBadge.textContent = 'CLEAR STANDING'; }
+            if (confScore) { confScore.textContent = '0% Match'; confScore.style.color = '#166534'; }
+          }
+
+          if (bannerDesc) bannerDesc.textContent = resp.summary;
+          if (advText) advText.textContent = resp.officialAdvice;
+          if (timeEl) timeEl.textContent = `Verified: ${resp.checkedAt}`;
+
+          // Multi-identifier cards
+          if (idGrid) {
+            idGrid.innerHTML = (resp.identifierChecks || []).map(c => `
+              <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:4px; padding:8px 12px; font-size:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <strong style="color:var(--parakh-navy); font-size:11px;">${c.identifierType}</strong>
+                  <span class="badge ${c.status === 'MATCHED' ? 'badge-critical' : (c.status === 'NO_MATCH' ? 'badge-success' : 'badge-info')}" style="font-size:9.5px;">${c.status}</span>
+                </div>
+                <div style="font-family:monospace; font-weight:700; color:#0F172A; margin-top:2px;">${c.submittedValue}</div>
+                <div style="font-size:10.5px; color:#64748B; margin-top:2px;">${c.notes}</div>
+              </div>
+            `).join('');
+          }
+
+          // Evidence Box
+          if (evidenceBox && evidenceContent) {
+            if (resp.matchedRecords && resp.matchedRecords.length > 0) {
+              evidenceBox.style.display = 'block';
+              evidenceContent.innerHTML = resp.matchedRecords.map(m => `
+                <div style="margin-bottom:8px;">
+                  <div><strong>Authority:</strong> ${m.issuingAuthority} (${m.source})</div>
+                  <div><strong>Order Reference:</strong> <code>${m.recordId}</code> | <strong>Action:</strong> ${m.actionType} (${m.status})</div>
+                  <div><strong>Sanction Period:</strong> ${m.effectiveDate} to ${m.expiryDate || 'Indefinite'}</div>
+                  <div style="margin-top:3px; background:#FEF3C7; padding:6px 10px; border-radius:3px; border-left:3px solid #D97706;">${m.evidence}</div>
+                </div>
+              `).join('');
+            } else {
+              evidenceBox.style.display = 'none';
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Debarment check API error, baseline profile active:", err);
+      }
+    }
+
+    async recheckDebarment() {
+      const bidId = this.currentIntegrityBidderId || 'BID-2026-003';
+      const btn = document.getElementById('btnRerunDebarment');
+      if (btn) btn.innerHTML = '<span>⚡ Re-Querying...</span>';
+
+      try {
+        const resp = await window.api.runDebarmentCheck(bidId, this.currentUser ? this.currentUser.name : 'Senior Procurement Officer');
+        if (resp && resp.success) {
+          alert(`[PARAKH AI - Debarment Cross-Check]\nStatutory registries queried:\n- Central Vigilance Commission (CVC)\n- Central Public Procurement Portal (CPPP)\n- Ministry of Finance Gazetted Sanctions\n\nResult: ${resp.matchStatus} (${resp.matchConfidence}% Match Confidence).\nCryptographic audit seal recorded.`);
+          this.loadDebarmentCheck(bidId);
+          this.renderAuditHistory();
+        }
+      } catch (err) {
+        alert(`Failed to rerun debarment check: ${err.message}`);
+      } finally {
+        if (btn) btn.innerHTML = '<span>🔄 Run Cross-Check Again</span>';
+      }
+    }
+
+    openDebarmentReviewModal() {
+      const modal = document.getElementById('debarmentReviewModal');
+      const nameEl = document.getElementById('modalDebarmentEntityName');
+      const detEl = document.getElementById('modalDebarmentDetails');
+      const recIdInput = document.getElementById('modalDebarmentRecordId');
+      if (!modal) return;
+
+      const check = this.currentDebarmentCheck;
+      if (nameEl) nameEl.textContent = check ? check.bidderName : 'Bidder Entity';
+      if (detEl) detEl.textContent = check ? check.summary : 'Statutory determination';
+      if (recIdInput) recIdInput.value = (check && check.matchedRecords && check.matchedRecords[0]) ? check.matchedRecords[0].recordId : 'DEBAR-2026-GEN';
+
+      modal.style.display = 'flex';
+    }
+
+    closeDebarmentReviewModal() {
+      const modal = document.getElementById('debarmentReviewModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async submitDebarmentReview() {
+      const action = document.getElementById('modalDebarmentAction').value;
+      const rationale = document.getElementById('modalDebarmentRationale').value.trim();
+      const recId = document.getElementById('modalDebarmentRecordId').value || 'DEBAR-2026-GEN';
+
+      if (!rationale) {
+        alert("Mandatory Compliance Safeguard: Please provide formal officer rationale before submitting.");
+        return;
+      }
+
+      try {
+        await window.api.reviewDebarmentRecord(recId, action, this.currentUser ? this.currentUser.name : 'Senior Procurement Officer', rationale);
+        this.closeDebarmentReviewModal();
+        alert(`Formal Officer Determination Recorded:\nAction: ${action}\nFile reference archived under statutory audit trail.`);
+        this.loadDebarmentCheck(this.currentIntegrityBidderId);
+        this.renderAuditHistory();
+      } catch (err) {
+        alert(`Failed to record determination: ${err.message}`);
+      }
+    }
   }
 
   // Global mount
   window.parakhApp = new ParakhApplication();
 
 })();
+
 

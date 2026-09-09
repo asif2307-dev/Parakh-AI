@@ -16,9 +16,30 @@ app = FastAPI(
     version="2.0.0"
 )
 
+from sqlalchemy import text
+
+def sync_schema():
+    with engine.begin() as conn:
+        if engine.dialect.name == "postgresql":
+            alter_queries = [
+                "ALTER TABLE tenders ADD COLUMN IF NOT EXISTS published_date VARCHAR(50);",
+                "ALTER TABLE tenders ADD COLUMN IF NOT EXISTS closing_date VARCHAR(50);",
+                "ALTER TABLE tenders ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'OPEN';",
+                "ALTER TABLE tenders ADD COLUMN IF NOT EXISTS category VARCHAR(100);",
+                "ALTER TABLE tenders ADD COLUMN IF NOT EXISTS location VARCHAR(150);",
+                "ALTER TABLE tenders ADD COLUMN IF NOT EXISTS estimated_value VARCHAR(100);",
+                "ALTER TABLE restricted_records ADD COLUMN IF NOT EXISTS evidence TEXT;"
+            ]
+            for q in alter_queries:
+                try:
+                    conn.execute(text(q))
+                except Exception as e:
+                    print(f"Schema sync notice: {e}")
+
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
+    sync_schema()
 
 
 @app.middleware("http")

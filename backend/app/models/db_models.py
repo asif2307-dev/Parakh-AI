@@ -18,6 +18,12 @@ class Tender(Base):
     title = Column(String)
     department = Column(String)
     description = Column(Text)
+    published_date = Column(String, nullable=True)
+    closing_date = Column(String, nullable=True)
+    status = Column(String, default="OPEN") # OPEN, CLOSED, UNDER_EVALUATION
+    category = Column(String, default="General Goods & Services")
+    location = Column(String, nullable=True)
+    estimated_value = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     bids = relationship("Bid", back_populates="tender")
@@ -211,5 +217,30 @@ class EarlyWarning(Base):
     is_acknowledged = Column(Boolean, default=False)
     acknowledged_by = Column(String, nullable=True)
     acknowledged_at = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class RestrictedRecord(Base):
+    __tablename__ = "restricted_records"
+    id = Column(String, primary_key=True, index=True)
+    entity_name = Column(String, index=True)
+    normalized_name = Column(String, index=True)
+    registration_id = Column(String, nullable=True, index=True)
+    gstin = Column(String, nullable=True, index=True)
+    pan = Column(String, nullable=True, index=True)
+    cin = Column(String, nullable=True, index=True)
+    organisation = Column(String, nullable=True)
+    action_type = Column(String, default="DEBARMENT") # DEBARMENT, BLACKLISTING, TENDER_BAN, INQUIRY
+    status = Column(String, default="ACTIVE") # ACTIVE, EXPIRED, REVOKED, CONDITIONAL
+    effective_date = Column(String)
+    expiry_date = Column(String, nullable=True)
+    issuing_authority = Column(String) # CVC, Ministry of Finance, State DISCOM, GeM Incident Management
+    source = Column(String)
+    source_url = Column(String, nullable=True)
+    record_id = Column(String, index=True)
+    confidence_level = Column(String, default="AUTHORITATIVE")
+    evidence = Column(Text, nullable=True)
+    notes = Column(Text, nullable=True)
+    is_demo = Column(Boolean, default=True)
+    retrieved_at = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 

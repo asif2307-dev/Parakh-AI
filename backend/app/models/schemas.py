@@ -256,4 +256,149 @@ class EarlyWarningAcknowledgeRequest(BaseModel):
     officer_name: str
     acknowledgment_notes: Optional[str] = None
 
+# =====================================================================
+# FEATURE 1: ACTIVE BIDDER APPLICATIONS SCHEMAS
+# =====================================================================
+class ActiveBidderItem(BaseModel):
+    id: str
+    tenderId: str
+    tenderTitle: str
+    department: str
+    bidderName: str
+    registrationType: str
+    udyam: str
+    gstin: str
+    pan: str
+    submissionTime: str
+    status: str
+    complianceScore: int = 0
+    riskLevel: str = "Low"
+
+class ActiveBiddersMetadata(BaseModel):
+    total: int
+    page: int
+    pageSize: int
+    source: str
+    isLive: bool = False
+    provider: str
+    lastUpdated: str
+
+class ActiveBiddersResponse(BaseModel):
+    success: bool
+    data: List[ActiveBidderItem]
+    metadata: ActiveBiddersMetadata
+
+# =====================================================================
+# FEATURE 2: LIVE TENDERS SCHEMAS
+# =====================================================================
+class LiveTenderItem(BaseModel):
+    tenderId: str
+    title: str
+    department: str
+    description: Optional[str] = None
+    publishedDate: str
+    closingDate: str
+    status: str # OPEN, CLOSED, UNDER_EVALUATION
+    category: str
+    location: Optional[str] = "Not specified"
+    estimatedValue: Optional[str] = "Not specified"
+    activeBiddersCount: int = 0
+
+class LiveTendersMetadata(BaseModel):
+    total: int
+    source: str
+    isLive: bool = False
+    lastUpdated: str
+
+class LiveTendersResponse(BaseModel):
+    success: bool
+    data: List[LiveTenderItem]
+    metadata: LiveTendersMetadata
+
+class TenderRequirementItem(BaseModel):
+    clauseNumber: str
+    title: str
+    description: str
+    isCritical: bool = False
+
+class TenderDetailResponse(BaseModel):
+    success: bool
+    tender: LiveTenderItem
+    requirements: List[TenderRequirementItem]
+    activeBidders: List[ActiveBidderItem]
+
+# =====================================================================
+# FEATURE 3: FLOATING AI CHAT ASSISTANT SCHEMAS
+# =====================================================================
+class ChatSourceItem(BaseModel):
+    title: str
+    type: str # STATUTORY_REGISTRY, TENDER_CLAUSE, BID_DOCUMENT, RISK_SIGNAL, DEBARMENT_GAZETTE
+    reference: Optional[str] = None
+    snippet: str
+
+class ChatContext(BaseModel):
+    tenderId: Optional[str] = None
+    bidderId: Optional[str] = None
+    currentView: Optional[str] = None
+
+class ChatRequest(BaseModel):
+    message: str
+    conversationId: Optional[str] = None
+    context: Optional[ChatContext] = None
+
+class ChatResponse(BaseModel):
+    success: bool
+    answer: str
+    sources: List[ChatSourceItem] = []
+    conversationId: str
+    contextUsed: Optional[Dict[str, Any]] = None
+
+# =====================================================================
+# FEATURE 4: DEBARMENT & CRIMINAL RECORD CROSS-CHECK SCHEMAS
+# =====================================================================
+class EntityIdentifierCheck(BaseModel):
+    identifierType: str # GSTIN, PAN, CIN, REGISTRATION_ID, NORMALIZED_NAME
+    submittedValue: str
+    status: str # MATCHED, NO_MATCH, NOT_AVAILABLE
+    notes: Optional[str] = None
+
+class DebarmentMatchRecord(BaseModel):
+    recordId: str
+    entityName: str
+    normalizedName: str
+    matchedIdentifiers: List[str]
+    actionType: str # DEBARMENT, BLACKLISTING, TENDER_BAN, INQUIRY
+    status: str # ACTIVE, EXPIRED, REVOKED
+    effectiveDate: str
+    expiryDate: Optional[str] = None
+    issuingAuthority: str
+    source: str
+    sourceUrl: Optional[str] = None
+    evidence: str
+    notes: Optional[str] = None
+    isAuthoritative: bool = True
+    isDemo: bool = True
+
+class DebarmentCheckResponse(BaseModel):
+    success: bool
+    bidId: str
+    bidderName: str
+    matchStatus: str # NO_MATCH, POSSIBLE_MATCH, HIGH_CONFIDENCE_MATCH, VERIFIED_RESTRICTED_RECORD, MANUAL_REVIEW_REQUIRED
+    matchConfidence: float # 0.0 to 100.0%
+    riskClassification: str # SAFE, ADVISORY, ELEVATED_RISK, CRITICAL_DEBARMENT
+    summary: str
+    checkedAt: str
+    isAuthoritativeDataset: bool = True
+    isDemoSource: bool = True
+    identifierChecks: List[EntityIdentifierCheck]
+    matchedRecords: List[DebarmentMatchRecord]
+    officialAdvice: str
+    requiresManualReview: bool = False
+
+class DebarmentReviewRequest(BaseModel):
+    recordId: str
+    action: str # VERIFIED_RESTRICTED, OVERRIDDEN, DISMISSED
+    officerName: str
+    rationale: str
+
 

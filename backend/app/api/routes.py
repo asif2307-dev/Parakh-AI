@@ -7,7 +7,9 @@ from app.models.db_models import Bid, Document, AuditLog, Tender, Profile, FaceV
 from app.models.schemas import (
     OfficerDecisionRequest, LoginRequest, OTPRequest, OTPVerifyRequest, 
     OnboardingRequest, FaceVerifyRequest, FaceVerifyResponse, OrgVerifyRequest, OrgVerifyResponse,
-    RiskSignalItem, EarlyWarningItem, IntegrityProfileResponse, RiskSignalReviewRequest, EarlyWarningAcknowledgeRequest
+    RiskSignalItem, EarlyWarningItem, IntegrityProfileResponse, RiskSignalReviewRequest, EarlyWarningAcknowledgeRequest,
+    ActiveBiddersResponse, LiveTendersResponse, TenderDetailResponse, ChatRequest, ChatResponse,
+    DebarmentCheckResponse, DebarmentReviewRequest
 )
 from app.services.compliance_engine import ComplianceEngine
 from app.services.contradiction_detector import ContradictionDetector
@@ -21,6 +23,9 @@ from app.services.expiry_monitor import ExpiryMonitorService
 from app.services.crosscheck_service import CrossCheckService
 from app.services.kyc_service import KYCService
 from app.services.integrity_risk_service import IntegrityRiskService
+from app.services.providers import get_tender_provider, get_bidder_provider
+from app.services.debarment_service import DebarmentCrossCheckService
+import uuid
 from app.data.seed_data import db as mock_db
 import os
 import shutil
@@ -866,6 +871,248 @@ def acknowledge_early_warning_action(warning_id: str, req: EarlyWarningAcknowled
         "status": "ACKNOWLEDGED",
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S IST")
     }
+
+# =====================================================================
+# FEATURE 1: ACTIVE BIDDER APPLICATIONS (PRODUCTION ENDPOINT)
+# =====================================================================
+
+@router.get("/bidders/active", response_model=ActiveBiddersResponse)
+def get_active_bidders(
+    tender_id: Optional[str] = Query(None, description="Filter by tender ID or reference"),
+    status: Optional[str] = Query(None, description="Filter by bid submission status"),
+    search: Optional[str] = Query(None, description="Search term for vendor name or tender"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    """
+    FEATURE 1: Active Bidders List.
+    Retrieves dynamic active bidder applications submitted for open tenders.
+    Uses BidderDataProvider abstraction (Live GeM integration if configured, DevMock provider fallback).
+    """
+    provider = get_bidder_provider()
+    result = provider.get_active_bidders(
+        tender_id=tender_id,
+        status=status,
+        search=search,
+        page=page,
+        page_size=page_size
+    )
+    return result
+
+# =====================================================================
+# FEATURE 2: LIVE TENDERS & TENDER DETAILS (PRODUCTION ENDPOINTS)
+# =====================================================================
+
+@router.get("/tenders/live", response_model=LiveTendersResponse)
+def get_live_tenders(
+    department: Optional[str] = Query(None, description="Filter by ministry / PSU department"),
+    status: Optional[str] = Query(None, description="Filter by tender status (OPEN, CLOSED, UNDER_EVALUATION)"),
+    search: Optional[str] = Query(None, description="Search term for title or tender ID"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    """
+    FEATURE 2: Live Tenders List.
+    Retrieves currently active and open tenders across central ministries and PSUs.
+    Uses TenderProvider abstraction supporting periodic synchronization and metadata tracking.
+    """
+    provider = get_tender_provider()
+    result = provider.get_live_tenders(
+        department=department,
+        status=status,
+        search=search,
+        page=page,
+        page_size=page_size
+    )
+    return result
+
+@router.get("/tenders/{tender_id:path}", response_model=TenderDetailResponse)
+def get_tender_detail(tender_id: str, db: Session = Depends(get_db)):
+    """
+    FEATURE 2: Tender Detail View with Active Bidders and Specifications.
+    Returns complete tender clauses, criteria, and submitted active bidder applications.
+    """
+    provider = get_tender_provider()
+    tender = provider.get_tender_by_id(tender_id)
+    if not tender:
+        raise HTTPException(status_code=404, detail=f"Tender {tender_id} not found in procurement registry.")
+    
+    req_items = [
+        {
+            "clauseNumber": r.get("clauseNumber", f"Clause {i+1}"),
+            "title": r.get("title", "Requirement"),
+            "description": r.get("description", ""),
+            "isCritical": r.get("isCritical", False)
+        }
+        for i, r in enumerate(tender.get("requirements", []))
+    ]
+
+    active_bidders = tender.get("activeBidders", [])
+
+    return {
+        "success": True,
+        "tender": {
+            "tenderId": tender["tenderId"],
+            "title": tender["title"],
+            "department": tender["department"],
+            "description": tender.get("description"),
+            "publishedDate": tender["publishedDate"],
+            "closingDate": tender["closingDate"],
+            "status": tender["status"],
+            "category": tender["category"],
+            "location": tender.get("location", "Not specified"),
+            "estimatedValue": tender.get("estimatedValue", "Not specified"),
+            "activeBiddersCount": len(active_bidders)
+        },
+        "requirements": req_items,
+        "activeBidders": active_bidders
+    }
+
+# =====================================================================
+# FEATURE 3: FLOATING AI CHAT ASSISTANT (PRODUCTION ENDPOINT)
+# =====================================================================
+
+@router.post("/api/chat", response_model=ChatResponse)
+@router.post("/chat", response_model=ChatResponse)
+def chat_copilot(req: ChatRequest, db: Session = Depends(get_db)):
+    """
+    FEATURE 3: Floating AI Procurement Assistant (Copilot).
+    Context-aware grounded chatbot for answering tender requirements, compliance findings,
+    contradiction evidence, and statutory debarment cross-checks.
+    """
+    conv_id = req.conversationId or f"conv-{uuid.uuid4().hex[:12]}"
+    context_data = {
+        "tender": {},
+        "bid": {},
+        "integrity": {},
+        "debarment": {},
+        "contradictions": []
+    }
+
+    # Fetch context dynamically from active portal state
+    tender_id = req.context.tenderId if req.context else None
+    bid_id = req.context.bidderId if req.context else None
+
+    # Fallback: if no bid_id provided, default to BID-2026-003 for demonstration
+    if not bid_id:
+        bid_id = "BID-2026-003"
+
+    # Fetch Bid context
+    b = db.query(Bid).filter(Bid.id == bid_id).first()
+    if b:
+        context_data["bid"] = {
+            "id": b.id,
+            "vendor_name": b.vendor_name,
+            "gstin": b.vendor_gstin,
+            "pan": b.vendor_pan,
+            "status": b.status,
+            "compliance_score": b.compliance_score,
+            "risk_level": b.risk_level
+        }
+        if b.extracted_data and "contradictions" in b.extracted_data:
+            context_data["contradictions"] = b.extracted_data["contradictions"]
+
+        # Fetch Tender context
+        target_tid = tender_id or b.tender_id
+        if target_tid:
+            tender_provider = get_tender_provider()
+            t_detail = tender_provider.get_tender_by_id(target_tid)
+            if t_detail:
+                context_data["tender"] = {
+                    "tenderId": t_detail.get("tenderId"),
+                    "title": t_detail.get("title"),
+                    "department": t_detail.get("department"),
+                    "estimatedValue": t_detail.get("estimatedValue"),
+                    "closingDate": t_detail.get("closingDate"),
+                    "status": t_detail.get("status"),
+                    "requirements": t_detail.get("requirements", [])
+                }
+
+    # Fetch Integrity & Risk context
+    try:
+        integrity_profile = IntegrityRiskService.get_integrity_profile(bid_id)
+        context_data["integrity"] = integrity_profile
+    except Exception as e:
+        print(f"Error gathering integrity profile for chat: {e}")
+
+    # Fetch Debarment Cross-Check context
+    try:
+        deb_check = DebarmentCrossCheckService.cross_check_bidder(bid_id)
+        context_data["debarment"] = deb_check
+    except Exception as e:
+        print(f"Error gathering debarment check for chat: {e}")
+
+    # Call AIService Grounded RAG
+    ai_result = AIService.chat_assistant(
+        message=req.message,
+        context_data=context_data
+    )
+
+    return {
+        "success": True,
+        "answer": ai_result.get("answer", "No response generated."),
+        "sources": ai_result.get("sources", []),
+        "conversationId": conv_id,
+        "contextUsed": {
+            "tenderId": context_data["tender"].get("tenderId"),
+            "bidderId": bid_id,
+            "bidderName": context_data["bid"].get("vendor_name")
+        }
+    }
+
+# =====================================================================
+# FEATURE 4: DEBARMENT & CRIMINAL RECORD CROSS-CHECK (PRODUCTION ENDPOINTS)
+# =====================================================================
+
+@router.get("/bidders/{bid_id}/debarment-check", response_model=DebarmentCheckResponse)
+def get_bidder_debarment_check(bid_id: str, db: Session = Depends(get_db)):
+    """
+    FEATURE 4: Statutory Debarment & Criminal Record Cross-Check.
+    Performs multi-identifier matching (GSTIN, PAN, Udyam, normalized legal name)
+    against CPPP, CVC, and Ministry of Finance debarment datasets.
+    """
+    result = DebarmentCrossCheckService.cross_check_bidder(bid_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error", "Bidder cross-check failed."))
+    return result
+
+@router.post("/bidders/{bid_id}/debarment-check/run", response_model=DebarmentCheckResponse)
+def run_bidder_debarment_recheck(
+    bid_id: str,
+    officer_name: str = Query("Senior Procurement Officer"),
+    db: Session = Depends(get_db)
+):
+    """
+    FEATURE 4: Force re-evaluation of statutory debarment registers and log an audit trail entry.
+    """
+    result = DebarmentCrossCheckService.recheck_and_audit(bid_id, officer_name=officer_name)
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result.get("error", "Failed to rerun cross-check."))
+    return result
+
+@router.post("/debarment-records/review")
+def review_debarment_record(req: DebarmentReviewRequest, db: Session = Depends(get_db)):
+    """
+    FEATURE 4: Official officer review and determination for ambiguous restricted-list matches.
+    """
+    AuditService.record_entry(
+        bid_id=req.recordId,
+        action_type="DEBARMENT_MATCH_REVIEWED",
+        actor=req.officerName,
+        details=f"Officer determination action: {req.action} for record {req.recordId}. Statutory rationale: {req.rationale}",
+        status_tag="SUCCESS" if req.action != "VERIFIED_RESTRICTED" else "CRITICAL"
+    )
+    return {
+        "success": True,
+        "recordId": req.recordId,
+        "action": req.action,
+        "officerName": req.officerName,
+        "reviewedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S IST"),
+        "message": f"Officer determination '{req.action}' recorded with cryptographic audit seal."
+    }
+
 
 
 

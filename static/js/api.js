@@ -278,6 +278,76 @@ const api = {
     });
     if (!res.ok) throw new Error(`Failed to acknowledge early warning ${warningId}`);
     return await res.json();
+  },
+
+  // FEATURE 1: Active Bidders
+  async getActiveBidders(params = {}) {
+    const query = new URLSearchParams();
+    if (params.tender_id) query.append('tender_id', params.tender_id);
+    if (params.status && params.status !== 'ALL') query.append('status', params.status);
+    if (params.search) query.append('search', params.search);
+    if (params.page) query.append('page', params.page);
+    if (params.page_size) query.append('page_size', params.page_size);
+
+    const res = await fetch(`${API_BASE}/bidders/active?${query.toString()}`);
+    if (!res.ok) throw new Error('Failed to load active bidders');
+    return await res.json();
+  },
+
+  // FEATURE 2: Live Tenders
+  async getLiveTenders(params = {}) {
+    const query = new URLSearchParams();
+    if (params.department && params.department !== 'ALL') query.append('department', params.department);
+    if (params.status && params.status !== 'ALL') query.append('status', params.status);
+    if (params.search) query.append('search', params.search);
+    if (params.page) query.append('page', params.page);
+    if (params.page_size) query.append('page_size', params.page_size);
+
+    const res = await fetch(`${API_BASE}/tenders/live?${query.toString()}`);
+    if (!res.ok) throw new Error('Failed to load live tenders');
+    return await res.json();
+  },
+
+  async getTenderDetail(tenderId) {
+    const res = await fetch(`${API_BASE}/tenders/${encodeURIComponent(tenderId)}`);
+    if (!res.ok) throw new Error(`Failed to load tender ${tenderId}`);
+    return await res.json();
+  },
+
+  // FEATURE 3: Floating AI Chat Assistant
+  async sendChatMessage(message, context = {}, conversationId = null) {
+    const res = await fetch(`${API_BASE}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, context, conversationId })
+    });
+    if (!res.ok) throw new Error('AI Copilot request failed');
+    return await res.json();
+  },
+
+  // FEATURE 4: Debarment & Criminal Record Cross-Check
+  async getDebarmentCheck(bidId) {
+    const res = await fetch(`${API_BASE}/bidders/${bidId}/debarment-check`);
+    if (!res.ok) throw new Error(`Failed to load debarment check for ${bidId}`);
+    return await res.json();
+  },
+
+  async runDebarmentCheck(bidId, officerName = 'Senior Procurement Officer') {
+    const res = await fetch(`${API_BASE}/bidders/${bidId}/debarment-check/run?officer_name=${encodeURIComponent(officerName)}`, {
+      method: 'POST'
+    });
+    if (!res.ok) throw new Error(`Failed to re-run debarment cross-check for ${bidId}`);
+    return await res.json();
+  },
+
+  async reviewDebarmentRecord(recordId, action, officerName, rationale) {
+    const res = await fetch(`${API_BASE}/debarment-records/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recordId, action, officerName, rationale })
+    });
+    if (!res.ok) throw new Error('Failed to record debarment review determination');
+    return await res.json();
   }
 };
 
