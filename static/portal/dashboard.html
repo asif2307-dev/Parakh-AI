@@ -330,6 +330,71 @@
           </div>
         </div>
 
+        <!-- FEATURE 1: ACTIVE BIDDER APPLICATIONS (CURRENT OPEN TENDERS) -->
+        <div class="panel" style="margin-bottom:16px;">
+          <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span>ACTIVE BIDDER APPLICATIONS (OPEN TENDERS)</span>
+              <span class="ai-tag" style="background:#EFF6FF; color:#1E40AF; border-color:#BFDBFE;">● DEMO DATASET (PARAKH Verified Ledger)</span>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="text" id="activeBiddersSearchInput" placeholder="Search bidder, GSTIN, tender..." class="form-control" style="font-size:12px; padding:4px 8px; width:220px;" oninput="parakhApp.filterActiveBidders()">
+              <select id="activeBiddersStatusFilter" class="form-control" style="font-size:12px; padding:4px 8px;" onchange="parakhApp.filterActiveBidders()">
+                <option value="ALL">All Submission Statuses</option>
+                <option value="Submitted">Submitted</option>
+                <option value="Under Analysis">Under Analysis</option>
+                <option value="Needs Review">Needs Review</option>
+                <option value="Compliant">Compliant</option>
+              </select>
+              <button class="btn btn-secondary btn-sm" onclick="parakhApp.loadActiveBidders()">Refresh</button>
+            </div>
+          </div>
+          <div class="panel-body" style="padding:0;">
+            <div class="table-responsive">
+              <table class="table-gov" id="activeBiddersTable">
+                <thead>
+                  <tr>
+                    <th style="width:14%;">Tender ID</th>
+                    <th style="width:22%;">Tender Scope</th>
+                    <th style="width:18%;">Bidder / Vendor Name</th>
+                    <th style="width:14%;">Registration Type</th>
+                    <th style="width:12%;">GSTIN / Udyam</th>
+                    <th style="width:10%;">Submission Time</th>
+                    <th style="width:8%;">Status</th>
+                    <th style="width:12%; text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="activeBiddersTbody">
+                  <!-- Populated dynamically by parakhApp.renderActiveBiddersTable() -->
+                </tbody>
+              </table>
+            </div>
+            <!-- Empty State -->
+            <div id="activeBiddersEmpty" style="display:none; padding:24px; text-align:center; color:#64748B;">
+              <div style="font-size:24px; margin-bottom:6px;">📂</div>
+              <strong style="color:#1E293B;">No active bidder applications match your query.</strong>
+              <div style="font-size:12px; margin-top:4px;">Try clearing the search filter or selecting 'All Submission Statuses'.</div>
+            </div>
+            <!-- Loading State -->
+            <div id="activeBiddersLoading" style="display:none; padding:24px; text-align:center; color:#1E40AF;">
+              <div style="font-size:13px; font-weight:600;">⚡ Loading verified bidder applications from GeM registry...</div>
+            </div>
+            <!-- Error State -->
+            <div id="activeBiddersError" style="display:none; padding:16px; background:#FEF2F2; color:#991B1B; border-top:1px solid #FECACA; text-align:center; font-size:12px;">
+              <span>Failed to fetch active bidder applications. Check server connection.</span>
+              <button class="btn btn-secondary btn-sm" style="margin-left:8px;" onclick="parakhApp.loadActiveBidders()">Retry</button>
+            </div>
+            <!-- Pagination Controls -->
+            <div id="activeBiddersPagination" style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; background:#F8FAFC; border-top:1px solid #CBD5E1; font-size:12px;">
+              <span id="activeBiddersPageInfo" style="color:#64748B;">Showing 1-6 of 6 active applications</span>
+              <div style="display:flex; gap:6px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="activeBiddersPrevBtn" onclick="parakhApp.activeBiddersPrevPage()" disabled>&laquo; Prev</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="activeBiddersNextBtn" onclick="parakhApp.activeBiddersNextPage()" disabled>Next &raquo;</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Recent Production & Dispatch Activity Table -->
         <div class="panel">
           <div class="panel-header">
@@ -380,22 +445,133 @@
       <section class="view-section" id="view-records" style="display:none;">
         <div class="page-title-banner">
           <div class="page-title-group">
-            <h1>Production & Dispatch Records Management</h1>
-            <p>Complete multi-source statutory repository of pipeline SCADA readings, refinery dispatch ledgers, and subsidized fuel allocations.</p>
+            <h1>Tenders, Bids & Procurement Records</h1>
+            <p>Live Government e-Marketplace (GeM) public procurement tenders, active bidder applications, and statutory hydrocarbon dispatch ledgers.</p>
           </div>
           <div class="page-actions-group">
             <button class="btn btn-secondary btn-sm" onclick="parakhApp.goBack()">
               <span>&larr; Back</span>
             </button>
             <button class="btn btn-accent btn-sm" onclick="parakhApp.switchView('upload')">
-              <span>+ Ingest Telemetry Batch</span>
+              <span>+ Ingest Bid Documents</span>
             </button>
-            <button class="btn btn-secondary btn-sm" onclick="parakhApp.exportRecordsCSV()">
-              <span>Export CSV</span>
+            <button class="btn btn-secondary btn-sm" onclick="parakhApp.loadLiveTenders()">
+              <span>Refresh Tenders</span>
             </button>
           </div>
         </div>
 
+        <!-- Procurement Module Dual-Tab Navigator -->
+        <div style="display:flex; gap:8px; margin-bottom:14px; border-bottom:2px solid #CBD5E1; padding-bottom:8px;">
+          <button type="button" class="btn btn-sm btn-primary" id="tabBtnLiveTenders" onclick="parakhApp.switchRecordsTab('live-tenders')">
+            🏛️ Live GeM Tenders & Active Procurement
+          </button>
+          <button type="button" class="btn btn-sm btn-secondary" id="tabBtnTelemetry" onclick="parakhApp.switchRecordsTab('telemetry')">
+            📊 Hydrocarbon Telemetry & Dispatch (Legacy)
+          </button>
+        </div>
+
+        <!-- TAB 1: LIVE TENDERS SECTION (FEATURE 2) -->
+        <div id="recordsTabLiveTenders">
+          <!-- Enterprise Filter Bar for Live Tenders -->
+          <div class="filter-card" style="margin-bottom:14px;">
+            <div class="form-row">
+              <div class="form-group flex-grow">
+                <label class="form-label" for="liveTendersSearchInput">Search Tender Title, Scope, or Reference ID</label>
+                <input type="text" id="liveTendersSearchInput" class="form-control" placeholder="e.g. Mechanical Equipment, Valves, GAIL, GEM/2026/B/882109..." oninput="parakhApp.filterLiveTenders()">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="liveTendersDeptFilter">Ministry / Department / PSU</label>
+                <select id="liveTendersDeptFilter" class="form-control" onchange="parakhApp.filterLiveTenders()">
+                  <option value="ALL">All Ministries & Departments</option>
+                  <option value="Heavy Industries">Heavy Industries / BHEL</option>
+                  <option value="Petroleum">Petroleum & Natural Gas / GAIL</option>
+                  <option value="Steel">Steel / SAIL</option>
+                  <option value="Jal Shakti">Jal Shakti / Water Mission</option>
+                  <option value="Electronics">Electronics & IT / NIC</option>
+                  <option value="Power">Power / PowerGrid Corp</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="liveTendersStatusFilter">Tender Status</label>
+                <select id="liveTendersStatusFilter" class="form-control" onchange="parakhApp.filterLiveTenders()">
+                  <option value="ALL">All Statuses</option>
+                  <option value="OPEN">Open for Bidding</option>
+                  <option value="UNDER_EVALUATION">Under Evaluation</option>
+                  <option value="CLOSED">Closed</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="liveTendersSort">Closing Date Sort</label>
+                <select id="liveTendersSort" class="form-control" onchange="parakhApp.filterLiveTenders()">
+                  <option value="ASC">Closing Soonest First</option>
+                  <option value="DESC">Closing Latest First</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex-direction:row; gap:5px; align-self:flex-end;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="parakhApp.resetLiveTendersFilter()">Reset Filters</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Tenders Data Table -->
+          <div class="panel">
+            <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span>ACTIVE GOVERNMENT e-MARKETPLACE (GeM) TENDERS</span>
+                <span class="ai-tag" style="background:#EFF6FF; color:#1E40AF; border-color:#BFDBFE;">● DEMO DATASET (GeM Public Feed)</span>
+              </div>
+              <span style="font-size:11px; color:#64748B;" id="liveTendersCountLabel">Showing 6 Open Tenders</span>
+            </div>
+            <div class="panel-body" style="padding:0;">
+              <div class="table-responsive">
+                <table class="table-gov" id="liveTendersTable">
+                  <thead>
+                    <tr>
+                      <th style="width:14%;">Tender ID</th>
+                      <th style="width:24%;">Tender Scope & Specifications</th>
+                      <th style="width:18%;">Procuring Ministry / Department</th>
+                      <th style="width:14%;">Category</th>
+                      <th style="width:10%;">Closing Date</th>
+                      <th style="width:8%;">Status</th>
+                      <th style="width:6%; text-align:center;">Bids</th>
+                      <th style="width:10%; text-align:right;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="liveTendersTbody">
+                    <!-- Populated dynamically by parakhApp.renderLiveTendersTable() -->
+                  </tbody>
+                </table>
+              </div>
+              <!-- Empty State -->
+              <div id="liveTendersEmpty" style="display:none; padding:28px; text-align:center; color:#64748B;">
+                <div style="font-size:28px; margin-bottom:6px;">🏛️</div>
+                <strong style="color:#1E293B;">No live tenders match the selected criteria.</strong>
+                <div style="font-size:12px; margin-top:4px;">Try selecting 'All Ministries' or resetting the search term.</div>
+              </div>
+              <!-- Loading State -->
+              <div id="liveTendersLoading" style="display:none; padding:28px; text-align:center; color:#1E40AF;">
+                <div style="font-size:13px; font-weight:600;">⚡ Synchronizing live tenders from GeM public feeds...</div>
+              </div>
+              <!-- Error State -->
+              <div id="liveTendersError" style="display:none; padding:16px; background:#FEF2F2; color:#991B1B; border-top:1px solid #FECACA; text-align:center; font-size:12px;">
+                <span>Live tender provider is currently unreachable.</span>
+                <button class="btn btn-secondary btn-sm" style="margin-left:8px;" onclick="parakhApp.loadLiveTenders()">Retry Sync</button>
+              </div>
+              <!-- Pagination Bar -->
+              <div id="liveTendersPagination" style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; background:#F8FAFC; border-top:1px solid #CBD5E1; font-size:12px;">
+                <span id="liveTendersPageInfo" style="color:#64748B;">Showing 1-6 of 6 tenders</span>
+                <div style="display:flex; gap:6px;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="liveTendersPrevBtn" onclick="parakhApp.liveTendersPrevPage()" disabled>&laquo; Prev</button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="liveTendersNextBtn" onclick="parakhApp.liveTendersNextPage()" disabled>Next &raquo;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: LEGACY TELEMETRY SECTION (WRAPS EXISTING HYDROCARBON TABLE) -->
+        <div id="recordsTabTelemetry" style="display:none;">
         <!-- Enterprise Filter Bar -->
         <div class="filter-card">
           <div class="form-row">
@@ -482,6 +658,7 @@
             <!-- Populated by JavaScript -->
           </div>
         </div>
+        </div> <!-- End recordsTabTelemetry -->
       </section>
 
       <!-- ===================================================================
@@ -1338,6 +1515,68 @@
           </div>
         </div>
 
+        <!-- FEATURE 4: DEBARMENT & CRIMINAL RECORD CROSS-CHECK MODULE -->
+        <div class="panel" style="margin-bottom:16px; border:1px solid #CBD5E1;" id="debarmentModuleCard">
+          <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span>STATUTORY DEBARMENT & CRIMINAL RECORD CROSS-CHECK</span>
+              <span class="ai-tag" id="debarmentDataSourceTag" style="background:#F0FDF4; color:#166534; border-color:#BBF7D0;">● STATUTORY SOURCES: CPPP, CVC & MoF (DEMO DATASET)</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnRerunDebarment" onclick="parakhApp.recheckDebarment()">
+                <span>🔄 Run Cross-Check Again</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnReviewDebarment" onclick="parakhApp.openDebarmentReviewModal()">
+                <span>📋 Review Determination</span>
+              </button>
+            </div>
+          </div>
+          <div class="panel-body" style="padding:16px;">
+            <!-- Primary Status Banner -->
+            <div id="debarmentStatusBanner" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:14px 18px; border-radius:4px; background:#F0FDF4; border:1px solid #BBF7D0; margin-bottom:14px;">
+              <div>
+                <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#15803D;" id="debarmentBannerSubtitle">STATUTORY SCRUTINY STATUS</div>
+                <div style="font-size:17px; font-weight:800; color:#166534; margin-top:2px;" id="debarmentBannerTitle">✓ No Verified Restricted Record Found</div>
+                <div style="font-size:12.5px; color:#334155; margin-top:4px;" id="debarmentBannerDesc">
+                  Multi-identifier cross-check across Central Vigilance Commission (CVC) and Ministry of Finance registers returned negative match.
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:11px; color:#64748B; font-weight:700;">MATCH CONFIDENCE</div>
+                <div style="font-size:20px; font-weight:800; color:#166534;" id="debarmentConfidenceScore">0% Match</div>
+                <span class="badge badge-success" id="debarmentRiskClassBadge" style="margin-top:4px; display:inline-block;">CLEAR STANDING</span>
+              </div>
+            </div>
+
+            <!-- Multi-Identifier Entity Verification Grid -->
+            <div style="margin-bottom:14px;">
+              <div style="font-size:11.5px; font-weight:700; color:#475569; text-transform:uppercase; margin-bottom:8px;">Multi-Identifier Verification Signals:</div>
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:10px;" id="debarmentIdentifiersGrid">
+                <!-- Populated dynamically: GSTIN, PAN, Udyam, Legal Name -->
+              </div>
+            </div>
+
+            <!-- Matched Records Evidence Box (Shown if high-confidence/possible match exists) -->
+            <div id="debarmentEvidenceBox" style="display:none; background:#FFFBEB; border:1px solid #FDE68A; border-radius:4px; padding:12px 16px; margin-bottom:14px;">
+              <div style="font-size:11px; font-weight:800; color:#92400E; text-transform:uppercase;">GAZETTED ORDER & ADJUDICATION EVIDENCE</div>
+              <div id="debarmentEvidenceContent" style="font-size:12.5px; color:#78350F; margin-top:4px; line-height:1.5;">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+
+            <!-- Statutory Advisory Note -->
+            <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:4px; padding:10px 14px; font-size:12px; color:#475569; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong style="color:#0F172A;">Official Evaluation Advisory:</strong>
+                <span id="debarmentAdvisoryText" style="margin-left:4px;">Bidder clear under verified public statutory debarment registers as of current retrieval date.</span>
+              </div>
+              <div style="font-size:11px; color:#64748B; white-space:nowrap; margin-left:12px;" id="debarmentTimestamp">
+                Verified: 2026-09-08 IST
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 6 Risk Dimensions Summary Grid -->
         <div class="panel" style="margin-bottom:16px;">
           <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
@@ -1738,6 +1977,141 @@
       </div>
     </div>
   </footer>
+
+  <!-- =====================================================================
+       8. MODAL: TENDER DETAILS & ACTIVE BIDDERS (FEATURE 2)
+       ===================================================================== -->
+  <div class="modal-overlay" id="tenderDetailModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7,38,74,0.65); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#fff; border-radius:6px; width:92%; max-width:850px; max-height:90vh; box-shadow:0 16px 48px rgba(0,0,0,0.35); border:1px solid #CBD5E1; display:flex; flex-direction:column; overflow:hidden;">
+      <div style="background:var(--parakh-navy); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span style="font-size:11px; text-transform:uppercase; color:var(--parakh-teal); font-weight:bold; letter-spacing:0.5px;" id="tenderModalRef">GEM/2026/B/882109</span>
+          <h3 style="margin:2px 0 0 0; font-size:16px; color:#fff;" id="tenderModalTitle">Supply of Mechanical Equipment & High-Pressure Industrial Valves</h3>
+        </div>
+        <button type="button" onclick="parakhApp.closeTenderDetailModal()" style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;">&times;</button>
+      </div>
+      <div style="padding:20px; overflow-y:auto; flex:1;" id="tenderModalBody">
+        <!-- Injected dynamically by parakhApp.openTenderDetail(tenderId) -->
+      </div>
+      <div style="background:#F8FAFC; border-top:1px solid #CBD5E1; padding:12px 20px; display:flex; justify-content:space-between; align-items:center;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="parakhApp.closeTenderDetailModal()">Close</button>
+        <button type="button" class="btn btn-accent btn-sm" id="btnRunTenderAnalysis" onclick="parakhApp.runTenderAnalysisFromModal()">
+          <span class="btn-icon">⚙️</span>
+          <span>[ Run PARAKH Analysis ]</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       9. MODAL: STATUTORY DEBARMENT DETERMINATION REVIEW (FEATURE 4)
+       ===================================================================== -->
+  <div class="modal-overlay" id="debarmentReviewModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7,38,74,0.65); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#fff; border-radius:6px; width:90%; max-width:620px; box-shadow:0 12px 36px rgba(0,0,0,0.35); border:1px solid #CBD5E1; overflow:hidden;">
+      <div style="background:var(--parakh-navy); color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span style="font-size:11px; text-transform:uppercase; color:var(--parakh-teal); font-weight:bold;">STATUTORY DISAMBIGUATION PROTOCOL</span>
+          <h3 style="margin:2px 0 0 0; font-size:15px; color:#fff;">Officer Restricted-List Determination</h3>
+        </div>
+        <button type="button" onclick="parakhApp.closeDebarmentReviewModal()" style="background:none; border:none; color:#fff; font-size:22px; cursor:pointer;">&times;</button>
+      </div>
+      <div style="padding:18px 20px;">
+        <input type="hidden" id="modalDebarmentRecordId">
+        <div style="margin-bottom:12px;">
+          <strong style="color:var(--parakh-navy); font-size:13.5px;" id="modalDebarmentEntityName">Entity Name</strong>
+          <div style="font-size:12px; color:#475569; margin-top:2px;" id="modalDebarmentDetails">Order details</div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px; color:var(--parakh-navy);">Official Determination Action:</label>
+          <select id="modalDebarmentAction" class="form-control" style="width:100%; font-size:12px; padding:6px;">
+            <option value="VERIFIED_RESTRICTED">VERIFIED RESTRICTED — Active debarment confirmed; enforce tender disqualification</option>
+            <option value="OVERRIDDEN">OVERRIDDEN — Term completed / exception granted with competent authority approval</option>
+            <option value="DISMISSED">DISMISSED — False positive / non-matching tax identifier (Presumption of innocence)</option>
+          </select>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px; color:var(--parakh-navy);">Mandatory Statutory Rationale & File Reference:</label>
+          <textarea id="modalDebarmentRationale" rows="3" class="form-control" style="width:100%; font-size:12px; padding:6px;" placeholder="Document official reasons, MCA21 verification notes, or approval authority file ref..."></textarea>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="parakhApp.closeDebarmentReviewModal()">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="parakhApp.submitDebarmentReview()">Submit Formal Determination</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       10. FEATURE 3: FLOATING AI CHAT ASSISTANT (WIDGET & DRAWER)
+       ===================================================================== -->
+  <!-- Floating Action Button (FAB) -->
+  <button type="button" id="parakhAiChatFab" onclick="parakhApp.toggleAiChat()" style="position:fixed; bottom:24px; right:24px; width:58px; height:58px; border-radius:50%; background:linear-gradient(135deg, var(--parakh-navy) 0%, #0c4a6e 100%); color:#fff; border:2px solid #38BDF8; box-shadow:0 6px 20px rgba(0,0,0,0.3); display:flex; justify-content:center; align-items:center; cursor:pointer; z-index:9998; transition:transform 0.2s ease;" title="Open PARAKH AI Procurement Copilot">
+    <span style="font-size:26px;">🤖</span>
+    <span id="parakhAiChatBadge" style="position:absolute; top:2px; right:2px; width:12px; height:12px; background:#10B981; border:2px solid #fff; border-radius:50%;"></span>
+  </button>
+
+  <!-- Floating Chat Box Drawer -->
+  <div id="parakhAiChatBox" style="position:fixed; bottom:92px; right:24px; width:430px; max-width:calc(100vw - 36px); height:600px; max-height:calc(100vh - 120px); background:#FFFFFF; border:1px solid #CBD5E1; border-radius:10px; box-shadow:0 16px 48px rgba(0,0,0,0.28); z-index:9999; display:none; flex-direction:column; overflow:hidden;">
+    <!-- Chat Header -->
+    <div style="background:var(--parakh-navy); color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1);">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:34px; height:34px; border-radius:50%; background:#0c4a6e; border:1px solid #38BDF8; display:flex; justify-content:center; align-items:center; font-size:18px;">
+          🤖
+        </div>
+        <div>
+          <div style="font-size:13px; font-weight:800; color:#fff; display:flex; align-items:center; gap:6px;">
+            <span>PARAKH AI Copilot</span>
+            <span style="font-size:9.5px; background:#065F46; color:#A7F3D0; padding:1px 6px; border-radius:10px; font-weight:600;">Grounded RAG</span>
+          </div>
+          <div style="font-size:10.5px; color:#94A3B8;" id="chatContextSubtitle">Context: Active Bidder & Tender</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button type="button" onclick="parakhApp.clearAiChat()" style="background:none; border:none; color:#94A3B8; font-size:14px; cursor:pointer; padding:4px;" title="Clear conversation">🗑️</button>
+        <button type="button" onclick="parakhApp.toggleAiChat()" style="background:none; border:none; color:#fff; font-size:22px; cursor:pointer; line-height:1; padding:0 4px;" title="Minimize">&minus;</button>
+      </div>
+    </div>
+
+    <!-- Active Context Bar -->
+    <div style="background:#F1F5F9; border-bottom:1px solid #E2E8F0; padding:6px 14px; font-size:11px; display:flex; justify-content:space-between; align-items:center;" id="chatActiveContextBar">
+      <div style="color:#475569; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:280px;" id="chatActiveContextLabel">
+        📍 <strong>Target:</strong> Bharat Industrial Systems
+      </div>
+      <span style="font-size:10px; color:#1E40AF; background:#DBEAFE; padding:2px 6px; border-radius:3px; font-weight:600;" id="chatActiveViewTag">DASHBOARD</span>
+    </div>
+
+    <!-- Quick Suggestion Chips -->
+    <div style="padding:8px 12px; background:#F8FAFC; border-bottom:1px solid #E2E8F0; display:flex; gap:6px; overflow-x:auto; white-space:nowrap;" id="chatPromptChips">
+      <button type="button" class="btn btn-secondary btn-sm" style="font-size:10.5px; padding:3px 8px; border-radius:12px; flex-shrink:0;" onclick="parakhApp.sendPredefinedChatMessage('What are the main compliance risks for this bidder?')">
+        ⚠️ Compliance Risks?
+      </button>
+      <button type="button" class="btn btn-secondary btn-sm" style="font-size:10.5px; padding:3px 8px; border-radius:12px; flex-shrink:0;" onclick="parakhApp.sendPredefinedChatMessage('Check statutory debarment and criminal records.')">
+        ⚖️ Debarment Standing?
+      </button>
+      <button type="button" class="btn btn-secondary btn-sm" style="font-size:10.5px; padding:3px 8px; border-radius:12px; flex-shrink:0;" onclick="parakhApp.sendPredefinedChatMessage('Summarize mandatory tender criteria.')">
+        📑 Tender Clauses?
+      </button>
+    </div>
+
+    <!-- Message Stream -->
+    <div id="aiChatMessages" style="flex:1; padding:14px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; background:#FAFAFA;">
+      <!-- Populated dynamically by parakhApp -->
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="aiChatTypingIndicator" style="display:none; padding:8px 14px; background:#F1F5F9; font-size:11.5px; color:#475569; display:flex; align-items:center; gap:8px;">
+      <span class="spinner" style="display:inline-block; width:12px; height:12px; border:2px solid #CBD5E1; border-top-color:#0284C7; border-radius:50%; animation:spin 0.8s linear infinite;"></span>
+      <span>PARAKH AI is querying verified registries and synthesizing evidence...</span>
+    </div>
+
+    <!-- Chat Input Form -->
+    <form id="aiChatForm" onsubmit="event.preventDefault(); parakhApp.sendUserChatMessage();" style="padding:10px 14px; background:#FFFFFF; border-top:1px solid #CBD5E1; display:flex; gap:8px; align-items:center;">
+      <input type="text" id="aiChatInput" class="form-control" style="flex:1; font-size:12.5px; padding:8px 12px; border-radius:20px; border:1px solid #CBD5E1;" placeholder="Ask about tender clauses, compliance, or debarment..." autocomplete="off">
+      <button type="submit" id="aiChatSendBtn" class="btn btn-primary" style="border-radius:50%; width:36px; height:36px; padding:0; display:flex; justify-content:center; align-items:center;" title="Send Message">
+        <span style="font-size:14px; margin-left:2px;">➤</span>
+      </button>
+    </form>
+  </div>
 
   <!-- Application Logic -->
   <script src="/static/js/api.js"></script>
