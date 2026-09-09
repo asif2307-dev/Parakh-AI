@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 settings = Settings()
 
@@ -24,7 +25,7 @@ class AIService:
             print("WARNING: No Gemini API Key found. Returning mock requirements.")
             return []
             
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-3.6-flash')
         prompt = f"""
         You are an expert procurement and tender analyst. 
         Analyze the following document text and extract the key requirements, compliance criteria, and clauses.
@@ -66,7 +67,7 @@ class AIService:
         if not settings.gemini_api_key:
             return {}
             
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-3.6-flash')
         prompt = f"""
         You are a compliance evaluation engine for a procurement portal.
         Evaluate the following bid data against the tender requirements.
@@ -164,7 +165,7 @@ class AIService:
         # Check if Gemini LLM is configured
         if settings.gemini_api_key:
             try:
-                model = genai.GenerativeModel('gemini-2.5-flash')
+                model = genai.GenerativeModel('gemini-3.6-flash')
                 system_context = f"""
 You are PARAKH AI, the enterprise AI Procurement Copilot for the Government e-Marketplace (GeM).
 You assist procurement evaluators, technical scrutiny wings, and tender committees.
