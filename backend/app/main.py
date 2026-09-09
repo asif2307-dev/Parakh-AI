@@ -38,8 +38,11 @@ def sync_schema():
 
 @app.on_event("startup")
 def on_startup():
-    Base.metadata.create_all(bind=engine)
-    sync_schema()
+    try:
+        Base.metadata.create_all(bind=engine)
+        sync_schema()
+    except Exception as e:
+        print(f"[DATABASE] Remote DB connection skipped or timed out: {e}")
 
 
 @app.middleware("http")
